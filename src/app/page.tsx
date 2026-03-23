@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { AppState } from "@/lib/types";
 import { detectAndParse, SAMPLE_MARKDOWN } from "@/lib/parser";
@@ -73,6 +74,7 @@ export default function Home() {
   const [exportOpen, setExportOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const exportBtnRef = useRef<HTMLButtonElement>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -220,13 +222,13 @@ export default function Home() {
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0"
             style={{ background: "var(--accent)" }}
           >
             T
           </div>
-          <span className="font-semibold text-sm tracking-tight text-white">tabula-rasa</span>
-          <span className="text-xs ml-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <span className="font-semibold text-sm tracking-tight text-white nav-brand-text">tabula-rasa</span>
+          <span className="text-xs ml-1 nav-brand-text" style={{ color: "rgba(255,255,255,0.35)" }}>
             by Goodness
           </span>
         </div>
@@ -268,8 +270,9 @@ export default function Home() {
             Edit Data
           </button>
 
-          <div className="relative">
+          <div>
             <button
+              ref={exportBtnRef}
               onClick={() => setExportOpen(!exportOpen)}
               disabled={exporting}
               className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
@@ -282,12 +285,16 @@ export default function Home() {
               <ChevronDown size={12} style={{ opacity: 0.6 }} />
             </button>
 
-            {exportOpen && (
+            {exportOpen && createPortal(
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
+                <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
                 <div
-                  className="absolute right-0 top-full mt-2 z-50 rounded-xl overflow-hidden shadow-2xl"
+                  className="rounded-xl overflow-hidden shadow-2xl"
                   style={{
+                    position: "fixed",
+                    top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
+                    right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
+                    zIndex: 9999,
                     background: "hsl(0,0%,12%)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     minWidth: "180px",
@@ -310,7 +317,8 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-              </>
+              </>,
+              document.body
             )}
           </div>
         </div>

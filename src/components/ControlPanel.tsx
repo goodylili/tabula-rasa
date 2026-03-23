@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { AppState, Background } from "@/lib/types";
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
@@ -53,6 +54,35 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
+function usePortalPosition(triggerRef: React.RefObject<HTMLElement | null>, open: boolean) {
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const update = useCallback(() => {
+    if (!triggerRef.current || !open) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceAbove > spaceBelow) {
+      setPos({ top: rect.top - 8, left: rect.left });
+    } else {
+      setPos({ top: rect.bottom + 8, left: rect.left });
+    }
+  }, [triggerRef, open]);
+
+  useEffect(() => {
+    update();
+    if (!open) return;
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, update]);
+
+  return pos;
+}
+
 function Dropdown({
   value,
   options,
@@ -63,7 +93,7 @@ function Dropdown({
   onChange: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const selected = options.find((o) => o.id === value);
 
   // Group options
@@ -78,9 +108,39 @@ function Dropdown({
     groups[groups.length - 1].items.push(opt);
   }
 
+  // Calculate portal position
+  const getMenuStyle = (): React.CSSProperties => {
+    if (!triggerRef.current) return {};
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const menuMaxH = 340;
+
+    if (spaceAbove > spaceBelow) {
+      // Open upward
+      const availH = Math.min(menuMaxH, spaceAbove - 16);
+      return {
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 8,
+        left: rect.left,
+        maxHeight: `${availH}px`,
+      };
+    } else {
+      // Open downward
+      const availH = Math.min(menuMaxH, spaceBelow - 16);
+      return {
+        position: "fixed",
+        top: rect.bottom + 8,
+        left: rect.left,
+        maxHeight: `${availH}px`,
+      };
+    }
+  };
+
   return (
-    <div className="relative" ref={ref}>
+    <div>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-3 rounded-lg text-xs font-medium transition-all"
         style={{
@@ -96,15 +156,16 @@ function Dropdown({
         <ChevronDown size={12} style={{ opacity: 0.5 }} />
       </button>
 
-      {open && (
+      {open && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
-            className="absolute bottom-full mb-2 left-0 z-50 rounded-xl overflow-hidden shadow-2xl"
+            className="rounded-xl overflow-hidden shadow-2xl"
             style={{
+              ...getMenuStyle(),
+              zIndex: 9999,
               background: "hsl(0,0%,12%)",
               border: "1px solid rgba(255,255,255,0.1)",
-              maxHeight: "340px",
               overflowY: "auto",
               minWidth: "200px",
             }}
@@ -145,7 +206,8 @@ function Dropdown({
               </div>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -237,12 +299,30 @@ function ColorPopover({
   theme: ReturnType<typeof getTheme>;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const hasCustom = state.customHeaderBg || state.customHeaderText || state.customRowBg ||
     state.customAltRowBg || state.customRowText || state.customBorderColor;
 
+  const getPopoverStyle = (): React.CSSProperties => {
+    if (!triggerRef.current) return {};
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const popoverW = 220;
+    // Keep popover within viewport horizontally
+    const left = Math.min(rect.right - popoverW, Math.max(8, rect.left));
+
+    if (spaceAbove > spaceBelow) {
+      return { position: "fixed", bottom: window.innerHeight - rect.top + 8, left, width: `${popoverW}px` };
+    } else {
+      return { position: "fixed", top: rect.bottom + 8, left, width: `${popoverW}px` };
+    }
+  };
+
   return (
-    <div className="relative">
+    <div>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium transition-all"
         style={{
@@ -260,15 +340,16 @@ function ColorPopover({
         Customize
       </button>
 
-      {open && (
+      {open && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
-            className="absolute bottom-full mb-2 right-0 z-50 rounded-xl p-4 shadow-2xl"
+            className="rounded-xl p-4 shadow-2xl"
             style={{
+              ...getPopoverStyle(),
+              zIndex: 9999,
               background: "hsl(0,0%,12%)",
               border: "1px solid rgba(255,255,255,0.1)",
-              width: "220px",
             }}
           >
             <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "rgba(255,255,255,0.3)" }}>
@@ -295,7 +376,8 @@ function ColorPopover({
               </button>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -347,169 +429,159 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
     )?.label ?? "Custom";
 
   return (
-    <div className="shrink-0 pb-4 px-4 overflow-x-auto">
+    <div className="shrink-0 pb-4 px-4">
       <div
-        className="panel-glow flex items-start gap-5 px-5 py-3.5 rounded-2xl mx-auto w-fit max-w-full"
+        className="panel-glow control-panel-grid px-5 py-3.5 rounded-2xl mx-auto"
         style={{
           background: "var(--panel-bg)",
           border: "1px solid var(--panel-border)",
           boxShadow: "none",
         }}
       >
-        {/* Theme */}
-        <ControlGroup label="Theme">
-          <Dropdown
-            value={state.themeId}
-            options={themeOptions}
-            onChange={(id) => onChange({ themeId: id })}
-          />
-        </ControlGroup>
-
-        {/* Background */}
-        <ControlGroup label="Background">
-          <div className="flex items-center gap-2">
+        {/* Row 1: Appearance */}
+        <div className="control-row">
+          <ControlGroup label="Theme">
             <Dropdown
-              value={currentBgLabel}
-              options={bgOptions}
-              onChange={(label) => {
-                const preset = presetBackgrounds.find((p) => p.label === label);
-                if (preset) setBackground(preset.bg);
-              }}
+              value={state.themeId}
+              options={themeOptions}
+              onChange={(id) => onChange({ themeId: id })}
             />
-            <button
-              onClick={() => colorRef.current?.click()}
-              className="w-7 h-7 rounded-lg shrink-0 transition-all"
-              style={{
-                background: state.background.color ?? state.background.gradient ?? "#1a1a2e",
-                border: "2px solid rgba(255,255,255,0.15)",
-              }}
-              title="Custom color"
+          </ControlGroup>
+
+          <ControlGroup label="Background">
+            <div className="flex items-center gap-2">
+              <Dropdown
+                value={currentBgLabel}
+                options={bgOptions}
+                onChange={(label) => {
+                  const preset = presetBackgrounds.find((p) => p.label === label);
+                  if (preset) setBackground(preset.bg);
+                }}
+              />
+              <button
+                onClick={() => colorRef.current?.click()}
+                className="w-7 h-7 rounded-lg shrink-0 transition-all"
+                style={{
+                  background: state.background.color ?? state.background.gradient ?? "#1a1a2e",
+                  border: "2px solid rgba(255,255,255,0.15)",
+                }}
+                title="Custom color"
+              />
+              <input
+                ref={colorRef}
+                type="color"
+                defaultValue={state.background.color ?? "#1a1a2e"}
+                onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
+                className="sr-only"
+              />
+            </div>
+          </ControlGroup>
+
+          <ControlGroup label="Colors">
+            <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
+          </ControlGroup>
+
+          <Divider />
+
+          <ControlGroup label="Font">
+            <Dropdown
+              value={state.fontFamily}
+              options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
+              onChange={(id) => onChange({ fontFamily: id })}
             />
+          </ControlGroup>
+
+          <ControlGroup label="Size">
+            <SegmentToggle
+              values={["12", "14", "16", "18"]}
+              active={String(state.fontSize)}
+              onChange={(v) => onChange({ fontSize: Number(v) })}
+            />
+          </ControlGroup>
+
+          <ControlGroup label="Title">
             <input
-              ref={colorRef}
-              type="color"
-              defaultValue={state.background.color ?? "#1a1a2e"}
-              onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
-              className="sr-only"
-            />
-          </div>
-        </ControlGroup>
-
-        {/* Padding */}
-        <ControlGroup label="Padding">
-          <SegmentToggle
-            values={["0", "16", "32", "48", "64", "128"]}
-            active={String(state.padding)}
-            onChange={(v) => onChange({ padding: Number(v) })}
-          />
-        </ControlGroup>
-
-        {/* Window Frame */}
-        <ControlGroup label="Window">
-          <SegmentToggle
-            values={["mac", "windows", "none"]}
-            labels={["macOS", "Win", "None"]}
-            active={state.windowStyle}
-            onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })}
-          />
-        </ControlGroup>
-
-        <Divider />
-
-        {/* Grid */}
-        <ControlGroup label="Grid">
-          <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
-        </ControlGroup>
-
-        {/* Striped */}
-        <ControlGroup label="Striped">
-          <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
-        </ControlGroup>
-
-        {/* Highlight First Row */}
-        <ControlGroup label="1st Row">
-          <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
-        </ControlGroup>
-
-        {/* Highlight First Column */}
-        <ControlGroup label="1st Col">
-          <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
-        </ControlGroup>
-
-        {/* Row Numbers */}
-        <ControlGroup label="Row #">
-          <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
-        </ControlGroup>
-
-        <Divider />
-
-        {/* Font Size */}
-        <ControlGroup label="Size">
-          <SegmentToggle
-            values={["12", "14", "16", "18"]}
-            active={String(state.fontSize)}
-            onChange={(v) => onChange({ fontSize: Number(v) })}
-          />
-        </ControlGroup>
-
-        {/* Font */}
-        <ControlGroup label="Font">
-          <Dropdown
-            value={state.fontFamily}
-            options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
-            onChange={(id) => onChange({ fontFamily: id })}
-          />
-        </ControlGroup>
-
-        {/* Border Radius */}
-        <ControlGroup label="Radius">
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min="0"
-              max="32"
-              step="1"
-              value={state.borderRadius}
-              onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
+              type="text"
+              value={state.title}
+              onChange={(e) => onChange({ title: e.target.value })}
+              placeholder="Untitled"
+              className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
               style={{
-                width: "70px",
-                accentColor: "var(--accent)",
+                height: "28px",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                padding: "0 10px",
+                width: "120px",
               }}
             />
-            <span
-              className="text-xs font-medium tabular-nums"
-              style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
-            >
-              {state.borderRadius}
-            </span>
-          </div>
-        </ControlGroup>
+          </ControlGroup>
+        </div>
 
-        {/* Title */}
-        <ControlGroup label="Title">
-          <input
-            type="text"
-            value={state.title}
-            onChange={(e) => onChange({ title: e.target.value })}
-            placeholder="Untitled"
-            className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
-            style={{
-              height: "28px",
-              background: "rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.85)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              padding: "0 10px",
-              width: "120px",
-            }}
-          />
-        </ControlGroup>
+        {/* Row 2: Layout & Toggles */}
+        <div className="control-row">
+          <ControlGroup label="Window">
+            <SegmentToggle
+              values={["mac", "windows", "none"]}
+              labels={["macOS", "Win", "None"]}
+              active={state.windowStyle}
+              onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })}
+            />
+          </ControlGroup>
 
-        <Divider />
+          <ControlGroup label="Padding">
+            <SegmentToggle
+              values={["0", "16", "32", "48", "64", "128"]}
+              active={String(state.padding)}
+              onChange={(v) => onChange({ padding: Number(v) })}
+            />
+          </ControlGroup>
 
-        {/* Colors */}
-        <ControlGroup label="Colors">
-          <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
-        </ControlGroup>
+          <ControlGroup label="Radius">
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="32"
+                step="1"
+                value={state.borderRadius}
+                onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
+                style={{
+                  width: "70px",
+                  accentColor: "var(--accent)",
+                }}
+              />
+              <span
+                className="text-xs font-medium tabular-nums"
+                style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
+              >
+                {state.borderRadius}
+              </span>
+            </div>
+          </ControlGroup>
+
+          <Divider />
+
+          <ControlGroup label="Grid">
+            <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
+          </ControlGroup>
+
+          <ControlGroup label="Striped">
+            <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
+          </ControlGroup>
+
+          <ControlGroup label="1st Row">
+            <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
+          </ControlGroup>
+
+          <ControlGroup label="1st Col">
+            <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
+          </ControlGroup>
+
+          <ControlGroup label="Row #">
+            <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
+          </ControlGroup>
+        </div>
       </div>
     </div>
   );

@@ -42,9 +42,9 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
       />
 
       <div
-        className="fixed top-0 right-0 bottom-0 z-50 flex flex-col"
+        className="fixed top-0 right-0 bottom-0 z-50 flex flex-col input-drawer"
         style={{
-          width: "420px",
+          width: "min(420px, 100vw)",
           background: "var(--panel-bg)",
           borderLeft: "1px solid var(--panel-border)",
           boxShadow: "-8px 0 32px rgba(0,0,0,0.4)",

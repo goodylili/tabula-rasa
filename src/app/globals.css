@@ -57,3 +57,36 @@ body {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
+
+/* Control panel layout */
+.control-panel-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.control-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 768px) {
+  .control-panel-grid {
+    width: 100%;
+  }
+  .control-row {
+    gap: 12px;
+  }
+}
+
+/* Responsive navbar */
+@media (max-width: 480px) {
+  .nav-brand-text {
+    display: none;
+  }
+}
