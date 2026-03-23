@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { AppState } from "@/lib/types";
 import { detectAndParse, SAMPLE_MARKDOWN } from "@/lib/parser";
 import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import InputDrawer from "@/components/InputDrawer";
 import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database } from "lucide-react";
+
+const STORAGE_KEY = "tabula-rasa-state";
 
 const DEFAULT_STATE: AppState = {
   rawInput: SAMPLE_MARKDOWN,
@@ -17,7 +20,7 @@ const DEFAULT_STATE: AppState = {
   themeId: "candy",
   background: {
     type: "gradient",
-    gradient: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
+    gradient: "linear-gradient(140deg, #A58EFB, #E9BFF8)",
   },
   windowStyle: "mac",
   fontSize: 14,
@@ -26,8 +29,23 @@ const DEFAULT_STATE: AppState = {
   highlightFirstRow: false,
   highlightFirstCol: false,
   borderRadius: 12,
+  fontFamily: "",
   title: "",
 };
+
+function loadState(): AppState {
+  if (typeof window === "undefined") return DEFAULT_STATE;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Re-parse table data from raw input
+      parsed.tableData = detectAndParse(parsed.rawInput, parsed.inputFormat === "auto" ? undefined : parsed.inputFormat);
+      return { ...DEFAULT_STATE, ...parsed };
+    }
+  } catch {}
+  return DEFAULT_STATE;
+}
 
 const EXPORT_FORMATS: { id: ExportFormat; label: string; ext: string; icon: React.ReactNode }[] = [
   { id: "png", label: "PNG Image", ext: "png", icon: <Image size={13} /> },
@@ -41,15 +59,42 @@ const EXPORT_FORMATS: { id: ExportFormat; label: string; ext: string; icon: Reac
 
 export default function Home() {
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
+  const [hydrated, setHydrated] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [inputOpen, setInputOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Load from localStorage on mount
+  useEffect(() => {
+    setState(loadState());
+    setHydrated(true);
+  }, []);
+
+  // Auto-save to localStorage every second
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = setInterval(() => {
+      try {
+        const toSave = { ...state };
+        delete (toSave as Record<string, unknown>).tableData; // Don't save parsed data
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      } catch {}
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [state, hydrated]);
+
   const handleChange = useCallback((patch: Partial<AppState>) => {
     setState((prev) => {
       const next = { ...prev, ...patch };
+
+      // When theme changes, reset background to the theme's default
+      if ("themeId" in patch && patch.themeId !== prev.themeId) {
+        const newTheme = getTheme(patch.themeId!);
+        next.background = { type: "gradient", gradient: newTheme.defaultBg };
+      }
+
       if ("rawInput" in patch || "inputFormat" in patch) {
         next.tableData = detectAndParse(next.rawInput, next.inputFormat === "auto" ? undefined : next.inputFormat);
       }
@@ -105,8 +150,6 @@ export default function Home() {
       reader.onload = (ev) => {
         const text = ev.target?.result as string;
         if (!text) return;
-
-        // Auto-detect format from extension
         let format: string | undefined;
         const name = file.name.toLowerCase();
         if (name.endsWith(".json")) format = "json";
@@ -122,11 +165,33 @@ export default function Home() {
         }));
       };
       reader.readAsText(file);
-      // Reset input so same file can be imported again
       e.target.value = "";
     },
     []
   );
+
+  // Handle inline cell edits from the table
+  const handleCellEdit = useCallback((rowIndex: number, colIndex: number, value: string) => {
+    setState((prev) => {
+      if (!prev.tableData) return prev;
+      const newRows = prev.tableData.rows.map((r) => [...r]);
+      newRows[rowIndex][colIndex] = value;
+      const newData = { ...prev.tableData, rows: newRows };
+      // Rebuild rawInput from the edited data
+      const exportData2 = (await_import: typeof import("@/lib/exporters")) => exportData;
+      void exportData2;
+      return { ...prev, tableData: newData };
+    });
+  }, []);
+
+  const handleHeaderEdit = useCallback((colIndex: number, value: string) => {
+    setState((prev) => {
+      if (!prev.tableData) return prev;
+      const newHeaders = [...prev.tableData.headers];
+      newHeaders[colIndex] = value;
+      return { ...prev, tableData: { ...prev.tableData, headers: newHeaders } };
+    });
+  }, []);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: "hsl(0, 0%, 5%)" }}>
@@ -153,7 +218,6 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Import */}
           <input
             ref={fileRef}
             type="file"
@@ -176,7 +240,6 @@ export default function Home() {
             Import
           </button>
 
-          {/* Edit Table Data */}
           <button
             onClick={() => setInputOpen(true)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
@@ -191,7 +254,6 @@ export default function Home() {
             Edit Data
           </button>
 
-          {/* Export Dropdown */}
           <div className="relative">
             <button
               onClick={() => setExportOpen(!exportOpen)}
@@ -240,15 +302,18 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Center — Preview area */}
       <main className="flex-1 overflow-auto flex items-center justify-center relative">
-        <PreviewCanvas ref={canvasRef} state={state} exporting={exporting} />
+        <PreviewCanvas
+          ref={canvasRef}
+          state={state}
+          exporting={exporting}
+          onCellEdit={handleCellEdit}
+          onHeaderEdit={handleHeaderEdit}
+        />
       </main>
 
-      {/* Bottom — Floating Control Panel */}
       <ControlPanel state={state} onChange={handleChange} />
 
-      {/* Input Drawer */}
       <InputDrawer
         open={inputOpen}
         onClose={() => setInputOpen(false)}

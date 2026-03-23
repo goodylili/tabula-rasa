@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { AppState, Background } from "@/lib/types";
 import { themes } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
+import { FONT_OPTIONS } from "@/lib/fonts";
 import { ChevronDown } from "lucide-react";
 
 interface ControlPanelProps {
@@ -324,6 +325,15 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
             values={["12", "14", "16", "18"]}
             active={String(state.fontSize)}
             onChange={(v) => onChange({ fontSize: Number(v) })}
+          />
+        </ControlGroup>
+
+        {/* Font */}
+        <ControlGroup label="Font">
+          <Dropdown
+            value={state.fontFamily}
+            options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
+            onChange={(id) => onChange({ fontFamily: id })}
           />
         </ControlGroup>
 

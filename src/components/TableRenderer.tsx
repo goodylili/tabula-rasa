@@ -1,8 +1,90 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TableData, TableTheme } from "@/lib/types";
 import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
+
+// Render inline `code` spans within cell text
+function renderCellContent(text: string): React.ReactNode {
+  if (!text.includes("`")) return text;
+  const parts = text.split(/(`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("`") && part.endsWith("`")) {
+      const code = part.slice(1, -1);
+      return (
+        <code
+          key={i}
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            padding: "1px 5px",
+            borderRadius: "4px",
+            fontSize: "0.9em",
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          }}
+        >
+          {code}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function EditableCell({
+  value,
+  onCommit,
+  style,
+  editable,
+}: {
+  value: string;
+  onCommit?: (val: string) => void;
+  style: React.CSSProperties;
+  editable: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setDraft(value); }, [value]);
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  if (editing && editable) {
+    return (
+      <td style={{ ...style, padding: "4px 6px" }}>
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => { onCommit?.(draft); setEditing(false); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { onCommit?.(draft); setEditing(false); }
+            if (e.key === "Escape") { setDraft(value); setEditing(false); }
+          }}
+          style={{
+            width: "100%",
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            borderRadius: "3px",
+            padding: "5px 10px",
+            color: "inherit",
+            fontSize: "inherit",
+            fontFamily: "inherit",
+            outline: "none",
+          }}
+        />
+      </td>
+    );
+  }
+
+  return (
+    <td
+      style={{ ...style, cursor: editable ? "text" : "default" }}
+      onDoubleClick={() => editable && setEditing(true)}
+    >
+      {renderCellContent(value)}
+    </td>
+  );
+}
 
 interface TableRendererProps {
   data: TableData;
@@ -12,9 +94,11 @@ interface TableRendererProps {
   stripedRows: boolean;
   highlightFirstRow?: boolean;
   highlightFirstCol?: boolean;
-  borderRadius?: number;
+  fontOverride?: string;
   title?: string;
   interactive?: boolean;
+  onCellEdit?: (rowIndex: number, colIndex: number, value: string) => void;
+  onHeaderEdit?: (colIndex: number, value: string) => void;
 }
 
 type SortDir = "asc" | "desc" | null;
@@ -27,9 +111,11 @@ export default function TableRenderer({
   stripedRows,
   highlightFirstRow = false,
   highlightFirstCol = false,
-  borderRadius,
+  fontOverride,
   title,
   interactive = false,
+  onCellEdit,
+  onHeaderEdit,
 }: TableRendererProps) {
   const [sortCol, setSortCol] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
@@ -97,19 +183,13 @@ export default function TableRenderer({
 
   // Determine cell background and text color based on position
   const getCellStyle = (ri: number, ci: number) => {
-    const isHighlightedRow = highlightFirstRow && ri === 0;
     const isHighlightedCol = highlightFirstCol && ci === 0;
-    const isHighlighted = isHighlightedRow || isHighlightedCol;
-
-    // For striping, offset index when first row is highlighted so stripe pattern
-    // starts fresh on the non-highlighted rows
-    const stripeIndex = highlightFirstRow ? ri - 1 : ri;
-    const isAlt = !isHighlighted && stripedRows && stripeIndex % 2 === 1;
+    const isAlt = !isHighlightedCol && stripedRows && ri % 2 === 1;
 
     let bg: string;
     let color: string = theme.rowText;
 
-    if (isHighlighted) {
+    if (isHighlightedCol) {
       bg = theme.accentBg;
       color = theme.accentText;
     } else if (isAlt) {
@@ -128,15 +208,14 @@ export default function TableRenderer({
           ? `1px solid ${theme.borderColor}`
           : "none",
       whiteSpace: "nowrap" as const,
-      fontWeight: isHighlighted ? 600 : 400,
+      fontWeight: isHighlightedCol ? 600 : 400,
     };
   };
 
   return (
     <div
       style={{
-        fontFamily: theme.fontFamily,
-        borderRadius: borderRadius != null ? `${borderRadius}px` : theme.borderRadius,
+        fontFamily: fontOverride || theme.fontFamily,
         boxShadow: theme.shadow,
         overflow: "hidden",
         width: "100%",
@@ -276,10 +355,8 @@ export default function TableRenderer({
                   key={i}
                   onClick={() => handleSort(i)}
                   style={{
-                    background: isGradient(theme.headerBg)
-                      ? theme.headerBg
-                      : theme.headerBg,
-                    color: theme.headerText,
+                    background: highlightFirstRow ? theme.accentBg : theme.headerBg,
+                    color: highlightFirstRow ? theme.accentText : theme.headerText,
                     padding: "12px 18px",
                     textAlign: "left",
                     fontWeight: 600,
@@ -339,9 +416,13 @@ export default function TableRenderer({
                   style={{ transition: "background 0.15s" }}
                 >
                   {row.map((cell, ci) => (
-                    <td key={ci} style={getCellStyle(ri, ci)}>
-                      {cell}
-                    </td>
+                    <EditableCell
+                      key={ci}
+                      value={cell}
+                      style={getCellStyle(ri, ci)}
+                      editable={interactive && !!onCellEdit}
+                      onCommit={(val) => onCellEdit?.(ri, ci, val)}
+                    />
                   ))}
                 </tr>
               ))

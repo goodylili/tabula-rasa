@@ -28,6 +28,7 @@ export interface TableTheme {
   // Used for first-row / first-col highlights
   accentBg: string;
   accentText: string;
+  defaultBg: string; // CSS background for the outer frame when this theme is selected
 }
 
 export interface ExportSettings {
@@ -49,5 +50,6 @@ export interface AppState {
   highlightFirstRow: boolean;
   highlightFirstCol: boolean;
   borderRadius: number;
+  fontFamily: string;
   title: string;
 }

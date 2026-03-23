@@ -10,10 +10,12 @@ import WindowFrame from "./WindowFrame";
 interface PreviewCanvasProps {
   state: AppState;
   exporting?: boolean;
+  onCellEdit?: (rowIndex: number, colIndex: number, value: string) => void;
+  onHeaderEdit?: (colIndex: number, value: string) => void;
 }
 
 const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
-  ({ state, exporting = false }, ref) => {
+  ({ state, exporting = false, onCellEdit, onHeaderEdit }, ref) => {
     const theme = getTheme(state.themeId);
     const bgCss = backgroundToCss(state.background);
 
@@ -31,8 +33,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     }
 
     return (
-      <div className="flex-1 flex items-center justify-center overflow-auto p-8">
-        {/* Exported div — no max-width so the table is never clipped */}
+      <div className="flex-1 flex items-start justify-center overflow-auto p-8">
         <div
           ref={ref}
           style={{
@@ -51,9 +52,11 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
               stripedRows={state.stripedRows}
               highlightFirstRow={state.highlightFirstRow}
               highlightFirstCol={state.highlightFirstCol}
-              borderRadius={state.borderRadius}
+              fontOverride={state.fontFamily || undefined}
               title={state.windowStyle === "none" ? state.title : undefined}
               interactive={!exporting}
+              onCellEdit={onCellEdit}
+              onHeaderEdit={onHeaderEdit}
             />
           </WindowFrame>
         </div>

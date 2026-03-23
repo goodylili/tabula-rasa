@@ -17,6 +17,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(0,0,0,0.5)",
     accentBg: "#1a1a1a",
     accentText: "#ffffff",
+    defaultBg: "linear-gradient(140deg, #232323, #1F1F1F)",
   },
   {
     id: "supabase",
@@ -33,6 +34,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(62,207,142,0.08)",
     accentBg: "#0f2018",
     accentText: "#3ECF8E",
+    defaultBg: "#121212",
   },
   {
     id: "tailwind",
@@ -49,6 +51,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(54,182,240,0.1)",
     accentBg: "#0c4a6e",
     accentText: "#e0f2fe",
+    defaultBg: "linear-gradient(140deg, #0f172a, #1e3a5f)",
   },
   {
     id: "openai",
@@ -65,6 +68,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(16,163,127,0.08)",
     accentBg: "#0d1a16",
     accentText: "#10a37f",
+    defaultBg: "#000000",
   },
   {
     id: "mintlify",
@@ -81,6 +85,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(13,147,115,0.08)",
     accentBg: "#0a1a14",
     accentText: "#0D9373",
+    defaultBg: "#000000",
   },
   {
     id: "prisma",
@@ -97,6 +102,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(90,103,216,0.08)",
     accentBg: "#0e0e20",
     accentText: "#5A67D8",
+    defaultBg: "#000000",
   },
   {
     id: "clerk",
@@ -113,6 +119,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(108,71,255,0.08)",
     accentBg: "#0e0a1e",
     accentText: "#6C47FF",
+    defaultBg: "#000000",
   },
   {
     id: "elevenlabs",
@@ -129,6 +136,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(0,0,0,0.5)",
     accentBg: "#141414",
     accentText: "#ffffff",
+    defaultBg: "#000000",
   },
   {
     id: "resend",
@@ -145,6 +153,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(0,0,0,0.5)",
     accentBg: "#1a1a1a",
     accentText: "#e0e0e0",
+    defaultBg: "linear-gradient(140deg, #B1B1B1, #181818)",
   },
   {
     id: "triggerdev",
@@ -161,6 +170,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(168,255,83,0.05)",
     accentBg: "#0e1210",
     accentText: "#A8FF53",
+    defaultBg: "#121317",
   },
   {
     id: "nuxt",
@@ -177,6 +187,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(0,220,130,0.06)",
     accentBg: "#1a2a22",
     accentText: "#00DC82",
+    defaultBg: "#292D3E",
   },
   {
     id: "browserbase",
@@ -193,6 +204,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(255,69,0,0.08)",
     accentBg: "#1a0e08",
     accentText: "#FF6830",
+    defaultBg: "linear-gradient(140deg, #FF4500, #000000)",
   },
   {
     id: "cloudflare",
@@ -209,6 +221,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(246,130,31,0.06)",
     accentBg: "#141008",
     accentText: "#F6821F",
+    defaultBg: "#0C0C0C",
   },
   {
     id: "gemini",
@@ -225,6 +238,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(138,180,248,0.06)",
     accentBg: "#141828",
     accentText: "#8AB4F8",
+    defaultBg: "#16181d",
   },
   {
     id: "stripe",
@@ -241,6 +255,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(99,91,255,0.08)",
     accentBg: "#0e1e3a",
     accentText: "#635BFF",
+    defaultBg: "#0a2540",
   },
   {
     id: "firecrawl",
@@ -257,6 +272,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(255,106,0,0.06)",
     accentBg: "#141008",
     accentText: "#FF6A00",
+    defaultBg: "#000000",
   },
 
   // ─── Ray.so Standard Themes ────────────────────────────────────
@@ -275,6 +291,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(165,142,251,0.2)",
     accentBg: "#2e2248",
     accentText: "#d4c4ff",
+    defaultBg: "linear-gradient(140deg, #A58EFB, #E9BFF8)",
   },
   {
     id: "crimson",
@@ -291,6 +308,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(255,99,99,0.15)",
     accentBg: "#3d1a1a",
     accentText: "#ffd4d4",
+    defaultBg: "linear-gradient(140deg, #FF6363, #733434)",
   },
   {
     id: "breeze",
@@ -307,6 +325,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(106,61,236,0.2)",
     accentBg: "#2a1840",
     accentText: "#e8d0ff",
+    defaultBg: "linear-gradient(140deg, #CF2F98, #6A3DEC)",
   },
   {
     id: "midnight",
@@ -323,6 +342,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(76,200,200,0.12)",
     accentBg: "#1e3a3a",
     accentText: "#a8f0f0",
+    defaultBg: "linear-gradient(140deg, #4CC8C8, #202033)",
   },
   {
     id: "sunset",
@@ -339,6 +359,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(255,122,47,0.15)",
     accentBg: "#3a2008",
     accentText: "#ffe0b2",
+    defaultBg: "linear-gradient(140deg, #FFCF73, #FF7A2F)",
   },
   {
     id: "raindrop",
@@ -355,6 +376,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(28,85,170,0.2)",
     accentBg: "#1a3060",
     accentText: "#d4e8ff",
+    defaultBg: "linear-gradient(140deg, #8EC7FB, #1C55AA)",
   },
   {
     id: "forest",
@@ -371,6 +393,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(33,50,35,0.3)",
     accentBg: "#1e3420",
     accentText: "#d8f5dc",
+    defaultBg: "linear-gradient(140deg, #506853, #213223)",
   },
   {
     id: "ice",
@@ -387,6 +410,7 @@ export const themes: TableTheme[] = [
     shadow: "0 20px 50px rgba(128,222,234,0.15)",
     accentBg: "#d0f0f5",
     accentText: "#0a3040",
+    defaultBg: "linear-gradient(140deg, #ffffff, #80deea)",
   },
   {
     id: "noir",
@@ -403,6 +427,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(0,0,0,0.5)",
     accentBg: "#222222",
     accentText: "#e0e0e0",
+    defaultBg: "linear-gradient(140deg, #B1B1B1, #181818)",
   },
   {
     id: "bitmap",
@@ -419,6 +444,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(241,57,63,0.15)",
     accentBg: "#2e1010",
     accentText: "#ffd0d0",
+    defaultBg: "linear-gradient(140deg, #881616, #F1393F)",
   },
   {
     id: "sand",
@@ -435,6 +461,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(175,136,86,0.15)",
     accentBg: "#3a2a14",
     accentText: "#f0e0c0",
+    defaultBg: "linear-gradient(140deg, #EED5B6, #AF8856)",
   },
   {
     id: "mono",
@@ -451,6 +478,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(0,0,0,0.5)",
     accentBg: "#1a1a1a",
     accentText: "#d0d0d0",
+    defaultBg: "linear-gradient(140deg, #333333, #181818)",
   },
   {
     id: "falcon",
@@ -467,6 +495,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(54,54,84,0.3)",
     accentBg: "#252545",
     accentText: "#d8e8f8",
+    defaultBg: "linear-gradient(140deg, #BDE3EC, #363654)",
   },
   {
     id: "meadow",
@@ -483,6 +512,7 @@ export const themes: TableTheme[] = [
     shadow: "0 25px 50px rgba(89,212,153,0.1)",
     accentBg: "#1e3418",
     accentText: "#d8f0c8",
+    defaultBg: "linear-gradient(140deg, #59D499, #A0872D)",
   },
 
   // ─── Classic Code Themes ───────────────────────────────────────
@@ -501,6 +531,7 @@ export const themes: TableTheme[] = [
     shadow: "0 20px 60px rgba(0,0,0,0.5)",
     accentBg: "#383a4a",
     accentText: "#ff79c6",
+    defaultBg: "linear-gradient(140deg, #282a36, #44475a)",
   },
   {
     id: "nord",
@@ -517,6 +548,7 @@ export const themes: TableTheme[] = [
     shadow: "0 20px 60px rgba(0,0,0,0.4)",
     accentBg: "#353b48",
     accentText: "#88c0d0",
+    defaultBg: "linear-gradient(140deg, #2e3440, #4c566a)",
   },
   {
     id: "monokai",
@@ -533,6 +565,7 @@ export const themes: TableTheme[] = [
     shadow: "0 20px 60px rgba(0,0,0,0.5)",
     accentBg: "#353628",
     accentText: "#a6e22e",
+    defaultBg: "linear-gradient(140deg, #272822, #3e3d32)",
   },
   {
     id: "solarized",
@@ -549,6 +582,7 @@ export const themes: TableTheme[] = [
     shadow: "0 20px 60px rgba(0,0,0,0.5)",
     accentBg: "#0a4050",
     accentText: "#2aa198",
+    defaultBg: "linear-gradient(140deg, #002b36, #073642)",
   },
   {
     id: "github-light",
@@ -565,6 +599,7 @@ export const themes: TableTheme[] = [
     shadow: "0 1px 3px rgba(0,0,0,0.12)",
     accentBg: "#ddf4ff",
     accentText: "#0969da",
+    defaultBg: "linear-gradient(140deg, #f0f0f0, #e0e0e0)",
   },
 ];
 
