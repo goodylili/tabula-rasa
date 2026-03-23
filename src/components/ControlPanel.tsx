@@ -11,6 +11,8 @@ import { ChevronDown } from "lucide-react";
 interface ControlPanelProps {
   state: AppState;
   onChange: (patch: Partial<AppState>) => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 function ControlLabel({ children }: { children: React.ReactNode }) {
@@ -383,7 +385,7 @@ function ColorPopover({
   );
 }
 
-export default function ControlPanel({ state, onChange }: ControlPanelProps) {
+export default function ControlPanel({ state, onChange, collapsed, onToggleCollapse }: ControlPanelProps) {
   const colorRef = useRef<HTMLInputElement>(null);
   const currentTheme = getTheme(state.themeId);
 
@@ -428,6 +430,155 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
       (p) => JSON.stringify(p.bg) === JSON.stringify(state.background)
     )?.label ?? "Custom";
 
+  const panelContent = (
+    <>
+      {/* Row 1: Appearance */}
+      <div className="control-row">
+        <ControlGroup label="Theme">
+          <Dropdown
+            value={state.themeId}
+            options={themeOptions}
+            onChange={(id) => onChange({ themeId: id })}
+          />
+        </ControlGroup>
+
+        <ControlGroup label="Background">
+          <div className="flex items-center gap-2">
+            <Dropdown
+              value={currentBgLabel}
+              options={bgOptions}
+              onChange={(label) => {
+                const preset = presetBackgrounds.find((p) => p.label === label);
+                if (preset) setBackground(preset.bg);
+              }}
+            />
+            <button
+              onClick={() => colorRef.current?.click()}
+              className="w-7 h-7 rounded-lg shrink-0 transition-all"
+              style={{
+                background: state.background.color ?? state.background.gradient ?? "#1a1a2e",
+                border: "2px solid rgba(255,255,255,0.15)",
+              }}
+              title="Custom color"
+            />
+            <input
+              ref={colorRef}
+              type="color"
+              defaultValue={state.background.color ?? "#1a1a2e"}
+              onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
+              className="sr-only"
+            />
+          </div>
+        </ControlGroup>
+
+        <ControlGroup label="Colors">
+          <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
+        </ControlGroup>
+
+        <Divider />
+
+        <ControlGroup label="Font">
+          <Dropdown
+            value={state.fontFamily}
+            options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
+            onChange={(id) => onChange({ fontFamily: id })}
+          />
+        </ControlGroup>
+
+        <ControlGroup label="Size">
+          <SegmentToggle
+            values={["12", "14", "16", "18"]}
+            active={String(state.fontSize)}
+            onChange={(v) => onChange({ fontSize: Number(v) })}
+          />
+        </ControlGroup>
+
+        <ControlGroup label="Title">
+          <input
+            type="text"
+            value={state.title}
+            onChange={(e) => onChange({ title: e.target.value })}
+            placeholder="Untitled"
+            className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
+            style={{
+              height: "28px",
+              background: "rgba(255,255,255,0.06)",
+              color: "rgba(255,255,255,0.85)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              padding: "0 10px",
+              width: "120px",
+            }}
+          />
+        </ControlGroup>
+      </div>
+
+      {/* Row 2: Layout & Toggles */}
+      <div className="control-row">
+        <ControlGroup label="Window">
+          <SegmentToggle
+            values={["mac", "windows", "none"]}
+            labels={["macOS", "Win", "None"]}
+            active={state.windowStyle}
+            onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })}
+          />
+        </ControlGroup>
+
+        <ControlGroup label="Padding">
+          <SegmentToggle
+            values={["0", "16", "32", "48", "64", "128"]}
+            active={String(state.padding)}
+            onChange={(v) => onChange({ padding: Number(v) })}
+          />
+        </ControlGroup>
+
+        <ControlGroup label="Radius">
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min="0"
+              max="32"
+              step="1"
+              value={state.borderRadius}
+              onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
+              style={{
+                width: "70px",
+                accentColor: "var(--accent)",
+              }}
+            />
+            <span
+              className="text-xs font-medium tabular-nums"
+              style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
+            >
+              {state.borderRadius}
+            </span>
+          </div>
+        </ControlGroup>
+
+        <Divider />
+
+        <ControlGroup label="Grid">
+          <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
+        </ControlGroup>
+
+        <ControlGroup label="Striped">
+          <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
+        </ControlGroup>
+
+        <ControlGroup label="1st Row">
+          <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
+        </ControlGroup>
+
+        <ControlGroup label="1st Col">
+          <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
+        </ControlGroup>
+
+        <ControlGroup label="Row #">
+          <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
+        </ControlGroup>
+      </div>
+    </>
+  );
+
   return (
     <div className="shrink-0 pb-4 px-4">
       <div
@@ -438,149 +589,27 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
           boxShadow: "none",
         }}
       >
-        {/* Row 1: Appearance */}
-        <div className="control-row">
-          <ControlGroup label="Theme">
-            <Dropdown
-              value={state.themeId}
-              options={themeOptions}
-              onChange={(id) => onChange({ themeId: id })}
-            />
-          </ControlGroup>
-
-          <ControlGroup label="Background">
-            <div className="flex items-center gap-2">
-              <Dropdown
-                value={currentBgLabel}
-                options={bgOptions}
-                onChange={(label) => {
-                  const preset = presetBackgrounds.find((p) => p.label === label);
-                  if (preset) setBackground(preset.bg);
-                }}
-              />
-              <button
-                onClick={() => colorRef.current?.click()}
-                className="w-7 h-7 rounded-lg shrink-0 transition-all"
-                style={{
-                  background: state.background.color ?? state.background.gradient ?? "#1a1a2e",
-                  border: "2px solid rgba(255,255,255,0.15)",
-                }}
-                title="Custom color"
-              />
-              <input
-                ref={colorRef}
-                type="color"
-                defaultValue={state.background.color ?? "#1a1a2e"}
-                onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
-                className="sr-only"
-              />
-            </div>
-          </ControlGroup>
-
-          <ControlGroup label="Colors">
-            <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
-          </ControlGroup>
-
-          <Divider />
-
-          <ControlGroup label="Font">
-            <Dropdown
-              value={state.fontFamily}
-              options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
-              onChange={(id) => onChange({ fontFamily: id })}
-            />
-          </ControlGroup>
-
-          <ControlGroup label="Size">
-            <SegmentToggle
-              values={["12", "14", "16", "18"]}
-              active={String(state.fontSize)}
-              onChange={(v) => onChange({ fontSize: Number(v) })}
-            />
-          </ControlGroup>
-
-          <ControlGroup label="Title">
-            <input
-              type="text"
-              value={state.title}
-              onChange={(e) => onChange({ title: e.target.value })}
-              placeholder="Untitled"
-              className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
+        {/* Mobile toggle bar */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="control-panel-toggle flex items-center justify-between w-full text-xs font-medium"
+            style={{ color: "rgba(255,255,255,0.6)" }}
+          >
+            <span>Controls</span>
+            <ChevronDown
+              size={14}
               style={{
-                height: "28px",
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.85)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                padding: "0 10px",
-                width: "120px",
+                transform: collapsed ? "rotate(0deg)" : "rotate(180deg)",
+                transition: "transform 0.2s",
               }}
             />
-          </ControlGroup>
-        </div>
+          </button>
+        )}
 
-        {/* Row 2: Layout & Toggles */}
-        <div className="control-row">
-          <ControlGroup label="Window">
-            <SegmentToggle
-              values={["mac", "windows", "none"]}
-              labels={["macOS", "Win", "None"]}
-              active={state.windowStyle}
-              onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })}
-            />
-          </ControlGroup>
-
-          <ControlGroup label="Padding">
-            <SegmentToggle
-              values={["0", "16", "32", "48", "64", "128"]}
-              active={String(state.padding)}
-              onChange={(v) => onChange({ padding: Number(v) })}
-            />
-          </ControlGroup>
-
-          <ControlGroup label="Radius">
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min="0"
-                max="32"
-                step="1"
-                value={state.borderRadius}
-                onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
-                style={{
-                  width: "70px",
-                  accentColor: "var(--accent)",
-                }}
-              />
-              <span
-                className="text-xs font-medium tabular-nums"
-                style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
-              >
-                {state.borderRadius}
-              </span>
-            </div>
-          </ControlGroup>
-
-          <Divider />
-
-          <ControlGroup label="Grid">
-            <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
-          </ControlGroup>
-
-          <ControlGroup label="Striped">
-            <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
-          </ControlGroup>
-
-          <ControlGroup label="1st Row">
-            <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
-          </ControlGroup>
-
-          <ControlGroup label="1st Col">
-            <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
-          </ControlGroup>
-
-          <ControlGroup label="Row #">
-            <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
-          </ControlGroup>
+        {/* Panel content — hidden when collapsed on mobile */}
+        <div className={collapsed ? "control-panel-content collapsed" : "control-panel-content"}>
+          {panelContent}
         </div>
       </div>
     </div>

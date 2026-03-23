@@ -72,6 +72,8 @@ export default function Home() {
   const [exporting, setExporting] = useState(false);
   const [inputOpen, setInputOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
@@ -80,6 +82,15 @@ export default function Home() {
   useEffect(() => {
     setState(loadState());
     setHydrated(true);
+  }, []);
+
+  // Track mobile breakpoint
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
   }, []);
 
   // Auto-save to localStorage every second
@@ -251,14 +262,15 @@ export default function Home() {
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            title="Import file"
           >
             <Upload size={13} />
-            Import
+            <span className="nav-btn-label">Import</span>
           </button>
 
           <button
             onClick={() => setInputOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
               background: "rgba(255,255,255,0.06)",
               color: "rgba(255,255,255,0.7)",
@@ -266,8 +278,10 @@ export default function Home() {
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            title="Edit table data"
           >
-            Edit Data
+            <FileText size={13} />
+            <span className="nav-btn-label">Edit Data</span>
           </button>
 
           <div className="flex items-center">
@@ -336,7 +350,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="flex-1 overflow-auto flex items-center justify-center relative">
+      <main className="flex-1 min-h-0 overflow-auto flex items-center justify-center relative">
         <PreviewCanvas
           ref={canvasRef}
           state={state}
@@ -346,7 +360,12 @@ export default function Home() {
         />
       </main>
 
-      <ControlPanel state={state} onChange={handleChange} />
+      <ControlPanel
+        state={state}
+        onChange={handleChange}
+        collapsed={isMobile ? controlsCollapsed : undefined}
+        onToggleCollapse={isMobile ? () => setControlsCollapsed((c) => !c) : undefined}
+      />
 
       <InputDrawer
         open={inputOpen}

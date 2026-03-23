@@ -74,7 +74,19 @@ body {
   flex-wrap: wrap;
 }
 
-/* Responsive: stack on small screens */
+/* Toggle bar hidden on desktop */
+.control-panel-toggle {
+  display: none;
+}
+
+/* Content always visible on desktop */
+.control-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Responsive: mobile controls */
 @media (max-width: 768px) {
   .control-panel-grid {
     width: 100%;
@@ -82,11 +94,29 @@ body {
   .control-row {
     gap: 12px;
   }
+  .control-panel-toggle {
+    display: flex;
+    padding: 4px 0;
+  }
+  .control-panel-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    max-height: 500px;
+    opacity: 1;
+  }
+  .control-panel-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* Responsive navbar */
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .nav-brand-text {
+    display: none;
+  }
+  .nav-btn-label {
     display: none;
   }
 }

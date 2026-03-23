@@ -77,7 +77,7 @@ export const themes: TableTheme[] = [
     headerBg: "#141a18",
     headerText: "#55d799",
     rowBg: "#0c100e",
-    altRowBg: "#10161310",
+    altRowBg: "#101613",
     rowText: "#9cb8ac",
     borderColor: "#1e2a24",
     fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
