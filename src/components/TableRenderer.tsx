@@ -94,6 +94,7 @@ interface TableRendererProps {
   stripedRows: boolean;
   highlightFirstRow?: boolean;
   highlightFirstCol?: boolean;
+  showRowNumbers?: boolean;
   fontOverride?: string;
   title?: string;
   interactive?: boolean;
@@ -111,6 +112,7 @@ export default function TableRenderer({
   stripedRows,
   highlightFirstRow = false,
   highlightFirstCol = false,
+  showRowNumbers = false,
   fontOverride,
   title,
   interactive = false,
@@ -311,6 +313,9 @@ export default function TableRenderer({
             {/* Filter row */}
             {interactive && showFilters && (
               <tr>
+                {showRowNumbers && (
+                  <th style={{ background: theme.rowBg, padding: "6px 12px", borderBottom: `1px solid ${theme.borderColor}`, borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none" }} />
+                )}
                 {data.headers.map((_, i) => (
                   <th
                     key={`filter-${i}`}
@@ -350,6 +355,24 @@ export default function TableRenderer({
 
             {/* Header row */}
             <tr>
+              {showRowNumbers && (
+                <th
+                  style={{
+                    background: highlightFirstRow ? theme.headerBg : theme.accentBg,
+                    color: highlightFirstRow ? theme.headerText : theme.accentText,
+                    padding: "12px 12px",
+                    textAlign: "center",
+                    fontWeight: 600,
+                    fontSize: `${fontSize - 2}px`,
+                    borderBottom: showGrid ? `2px solid ${theme.borderColor}` : "none",
+                    borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none",
+                    whiteSpace: "nowrap",
+                    opacity: 0.6,
+                  }}
+                >
+                  #
+                </th>
+              )}
               {data.headers.map((header, i) => (
                 <th
                   key={i}
@@ -397,7 +420,7 @@ export default function TableRenderer({
             {processedRows.length === 0 && interactive ? (
               <tr>
                 <td
-                  colSpan={data.headers.length}
+                  colSpan={data.headers.length + (showRowNumbers ? 1 : 0)}
                   style={{
                     color: theme.rowText,
                     padding: "24px 18px",
@@ -415,6 +438,21 @@ export default function TableRenderer({
                   key={ri}
                   style={{ transition: "background 0.15s" }}
                 >
+                  {showRowNumbers && (
+                    <td
+                      style={{
+                        ...getCellStyle(ri, -1),
+                        textAlign: "center",
+                        padding: "11px 12px",
+                        fontSize: `${fontSize - 2}px`,
+                        opacity: 0.4,
+                        fontWeight: 500,
+                        borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none",
+                      }}
+                    >
+                      {ri + 1}
+                    </td>
+                  )}
                   {row.map((cell, ci) => (
                     <EditableCell
                       key={ci}

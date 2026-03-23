@@ -49,6 +49,7 @@ export interface AppState {
   stripedRows: boolean;
   highlightFirstRow: boolean;
   highlightFirstCol: boolean;
+  showRowNumbers: boolean;
   borderRadius: number;
   fontFamily: string;
   // Custom color overrides (empty string = use theme default)

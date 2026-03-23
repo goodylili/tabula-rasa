@@ -62,6 +62,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
               stripedRows={state.stripedRows}
               highlightFirstRow={state.highlightFirstRow}
               highlightFirstCol={state.highlightFirstCol}
+              showRowNumbers={state.showRowNumbers}
               fontOverride={state.fontFamily || undefined}
               title={state.windowStyle === "none" ? state.title : undefined}
               interactive={!exporting}

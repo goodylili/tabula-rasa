@@ -427,6 +427,11 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
           <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
         </ControlGroup>
 
+        {/* Row Numbers */}
+        <ControlGroup label="Row #">
+          <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
+        </ControlGroup>
+
         <Divider />
 
         {/* Font Size */}

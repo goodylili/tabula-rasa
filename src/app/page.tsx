@@ -28,6 +28,7 @@ const DEFAULT_STATE: AppState = {
   stripedRows: true,
   highlightFirstRow: false,
   highlightFirstCol: false,
+  showRowNumbers: false,
   borderRadius: 12,
   fontFamily: "",
   customHeaderBg: "",
