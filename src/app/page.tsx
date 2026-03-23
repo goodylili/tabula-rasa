@@ -270,19 +270,31 @@ export default function Home() {
             Edit Data
           </button>
 
-          <div>
+          <div className="flex items-center">
             <button
-              ref={exportBtnRef}
-              onClick={() => setExportOpen(!exportOpen)}
+              onClick={() => handleExport("png")}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
               style={{ background: "var(--accent)" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
             >
               <Download size={14} />
               {exporting ? "Exporting..." : "Export"}
-              <ChevronDown size={12} style={{ opacity: 0.6 }} />
+            </button>
+            <button
+              ref={exportBtnRef}
+              onClick={() => setExportOpen(!exportOpen)}
+              disabled={exporting}
+              className="flex items-center py-1.5 px-2 rounded-r-lg text-white transition-all disabled:opacity-50"
+              style={{
+                background: "var(--accent)",
+                borderLeft: "1px solid rgba(255,255,255,0.2)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
+            >
+              <ChevronDown size={12} style={{ opacity: 0.7 }} />
             </button>
 
             {exportOpen && createPortal(
