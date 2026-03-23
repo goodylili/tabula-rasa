@@ -42,7 +42,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
             display: "inline-block",
           }}
         >
-          <WindowFrame style={state.windowStyle} title={state.title || undefined}>
+          <WindowFrame style={state.windowStyle} title={state.title || undefined} borderRadius={state.borderRadius}>
             <TableRenderer
               data={state.tableData}
               theme={theme}
@@ -51,6 +51,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
               stripedRows={state.stripedRows}
               highlightFirstRow={state.highlightFirstRow}
               highlightFirstCol={state.highlightFirstCol}
+              borderRadius={state.borderRadius}
               title={state.windowStyle === "none" ? state.title : undefined}
               interactive={!exporting}
             />

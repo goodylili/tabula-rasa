@@ -12,6 +12,7 @@ interface TableRendererProps {
   stripedRows: boolean;
   highlightFirstRow?: boolean;
   highlightFirstCol?: boolean;
+  borderRadius?: number;
   title?: string;
   interactive?: boolean;
 }
@@ -26,6 +27,7 @@ export default function TableRenderer({
   stripedRows,
   highlightFirstRow = false,
   highlightFirstCol = false,
+  borderRadius,
   title,
   interactive = false,
 }: TableRendererProps) {
@@ -134,7 +136,7 @@ export default function TableRenderer({
     <div
       style={{
         fontFamily: theme.fontFamily,
-        borderRadius: theme.borderRadius,
+        borderRadius: borderRadius != null ? `${borderRadius}px` : theme.borderRadius,
         boxShadow: theme.shadow,
         overflow: "hidden",
         width: "100%",

@@ -6,9 +6,10 @@ interface WindowFrameProps {
   style: "mac" | "windows" | "none";
   children: React.ReactNode;
   title?: string;
+  borderRadius?: number;
 }
 
-export default function WindowFrame({ style, children, title }: WindowFrameProps) {
+export default function WindowFrame({ style, children, title, borderRadius }: WindowFrameProps) {
   if (style === "none") return <>{children}</>;
 
   if (style === "mac") {
@@ -17,7 +18,7 @@ export default function WindowFrame({ style, children, title }: WindowFrameProps
         style={{
           background: "rgba(30,30,40,0.85)",
           backdropFilter: "blur(20px)",
-          borderRadius: "12px",
+          borderRadius: borderRadius != null ? `${borderRadius}px` : "12px",
           overflow: "hidden",
           boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
           border: "1px solid rgba(255,255,255,0.08)",
@@ -63,7 +64,7 @@ export default function WindowFrame({ style, children, title }: WindowFrameProps
       style={{
         background: "rgba(30,30,40,0.85)",
         backdropFilter: "blur(20px)",
-        borderRadius: "8px",
+        borderRadius: borderRadius != null ? `${borderRadius}px` : "8px",
         overflow: "hidden",
         boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         border: "1px solid rgba(255,255,255,0.08)",
