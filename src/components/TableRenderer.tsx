@@ -218,7 +218,6 @@ export default function TableRenderer({
     <div
       style={{
         fontFamily: fontOverride || theme.fontFamily,
-        boxShadow: theme.shadow,
         overflow: "hidden",
         width: "100%",
       }}

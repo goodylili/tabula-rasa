@@ -20,7 +20,7 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
           backdropFilter: "blur(20px)",
           borderRadius: borderRadius != null ? `${borderRadius}px` : "12px",
           overflow: "hidden",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
+          boxShadow: "none",
           border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
@@ -66,7 +66,7 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
         backdropFilter: "blur(20px)",
         borderRadius: borderRadius != null ? `${borderRadius}px` : "8px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+        boxShadow: "none",
         border: "1px solid rgba(255,255,255,0.08)",
       }}
     >

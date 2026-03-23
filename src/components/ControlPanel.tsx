@@ -347,13 +347,13 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
     )?.label ?? "Custom";
 
   return (
-    <div className="flex justify-center pb-5 px-4 shrink-0">
+    <div className="shrink-0 pb-4 px-4 overflow-x-auto">
       <div
-        className="panel-glow flex items-start gap-6 px-6 py-4 rounded-2xl"
+        className="panel-glow flex items-start gap-5 px-5 py-3.5 rounded-2xl mx-auto w-fit max-w-full"
         style={{
           background: "var(--panel-bg)",
           border: "1px solid var(--panel-border)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+          boxShadow: "none",
         }}
       >
         {/* Theme */}
