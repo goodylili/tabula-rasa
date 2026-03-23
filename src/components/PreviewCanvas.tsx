@@ -9,51 +9,67 @@ import WindowFrame from "./WindowFrame";
 
 interface PreviewCanvasProps {
   state: AppState;
+  exporting?: boolean;
+  onCellEdit?: (rowIndex: number, colIndex: number, value: string) => void;
+  onHeaderEdit?: (colIndex: number, value: string) => void;
 }
 
 const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
-  ({ state }, ref) => {
-    const theme = getTheme(state.themeId);
+  ({ state, exporting = false, onCellEdit, onHeaderEdit }, ref) => {
+    const baseTheme = getTheme(state.themeId);
+    // Merge custom color overrides on top of theme
+    const theme = {
+      ...baseTheme,
+      ...(state.customHeaderBg && { accentBg: state.customHeaderBg, headerBg: state.customHeaderBg }),
+      ...(state.customHeaderText && { accentText: state.customHeaderText, headerText: state.customHeaderText }),
+      ...(state.customRowBg && { rowBg: state.customRowBg }),
+      ...(state.customAltRowBg && { altRowBg: state.customAltRowBg }),
+      ...(state.customRowText && { rowText: state.customRowText }),
+      ...(state.customBorderColor && { borderColor: state.customBorderColor }),
+    };
     const bgCss = backgroundToCss(state.background);
 
     if (!state.tableData) {
       return (
-        <div className="flex-1 flex items-center justify-center bg-[#0a0a10]">
+        <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="text-5xl mb-4">⬛</div>
-            <p className="text-zinc-500 text-sm">Paste JSON or a Markdown table to preview</p>
+            <div className="text-5xl mb-4" style={{ opacity: 0.3 }}>T</div>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Paste JSON, CSV, Markdown, or PostgreSQL to preview
+            </p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0a0a10] overflow-auto p-8">
-        {/* This outer div is exported */}
+      <div className="flex-1 flex items-start justify-center overflow-auto p-4 sm:p-8">
         <div
           ref={ref}
           style={{
             background: bgCss,
-            padding: "48px",
-            borderRadius: "20px",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: "500px",
+            padding: `${state.padding}px`,
+            borderRadius: `${state.borderRadius}px`,
+            display: "inline-block",
           }}
         >
-          <div style={{ width: "100%", maxWidth: "900px" }}>
-            <WindowFrame style={state.windowStyle} title={state.title || undefined}>
-              <TableRenderer
-                data={state.tableData}
-                theme={theme}
-                fontSize={state.fontSize}
-                showGrid={state.showGrid}
-                stripedRows={state.stripedRows}
-                title={state.windowStyle === "none" ? state.title : undefined}
-              />
-            </WindowFrame>
-          </div>
+          <WindowFrame style={state.windowStyle} title={state.title || undefined} borderRadius={state.borderRadius}>
+            <TableRenderer
+              data={state.tableData}
+              theme={theme}
+              fontSize={state.fontSize}
+              showGrid={state.showGrid}
+              stripedRows={state.stripedRows}
+              highlightFirstRow={state.highlightFirstRow}
+              highlightFirstCol={state.highlightFirstCol}
+              showRowNumbers={state.showRowNumbers}
+              fontOverride={state.fontFamily || undefined}
+              title={state.windowStyle === "none" ? state.title : undefined}
+              interactive={!exporting}
+              onCellEdit={onCellEdit}
+              onHeaderEdit={onHeaderEdit}
+            />
+          </WindowFrame>
         </div>
       </div>
     );

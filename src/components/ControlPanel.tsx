@@ -1,254 +1,587 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { AppState, Background } from "@/lib/types";
-import { themes } from "@/lib/themes";
+import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
+import { FONT_OPTIONS } from "@/lib/fonts";
+import { ChevronDown } from "lucide-react";
 
 interface ControlPanelProps {
   state: AppState;
   onChange: (patch: Partial<AppState>) => void;
-  onExport: () => void;
-  exporting: boolean;
 }
 
-function Label({ children }: { children: React.ReactNode }) {
+function ControlLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-2">
+    <div
+      className="text-[11px] font-medium mb-1.5 select-none"
+      style={{ color: "rgba(255,255,255,0.4)" }}
+    >
       {children}
     </div>
   );
 }
 
-function Section({ children, title }: { children: React.ReactNode; title: string }) {
+function ControlGroup({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div className="mb-6">
-      <Label>{title}</Label>
-      {children}
+    <div className="flex flex-col">
+      <ControlLabel>{label}</ControlLabel>
+      <div className="flex items-center" style={{ height: "28px" }}>
+        {children}
+      </div>
     </div>
   );
 }
 
-export default function ControlPanel({ state, onChange, onExport, exporting }: ControlPanelProps) {
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="relative rounded-full transition-colors"
+      style={{
+        width: "36px",
+        height: "20px",
+        background: on ? "var(--accent)" : "rgba(255,255,255,0.12)",
+      }}
+    >
+      <div
+        className="absolute top-[2px] w-4 h-4 rounded-full bg-white transition-all"
+        style={{ left: on ? "18px" : "2px" }}
+      />
+    </button>
+  );
+}
+
+function usePortalPosition(triggerRef: React.RefObject<HTMLElement | null>, open: boolean) {
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const update = useCallback(() => {
+    if (!triggerRef.current || !open) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceAbove > spaceBelow) {
+      setPos({ top: rect.top - 8, left: rect.left });
+    } else {
+      setPos({ top: rect.bottom + 8, left: rect.left });
+    }
+  }, [triggerRef, open]);
+
+  useEffect(() => {
+    update();
+    if (!open) return;
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, update]);
+
+  return pos;
+}
+
+function Dropdown({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: { id: string; label: string; group?: string; extra?: React.ReactNode }[];
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const selected = options.find((o) => o.id === value);
+
+  // Group options
+  const groups: { name: string; items: typeof options }[] = [];
+  let currentGroup: string | null = null;
+  for (const opt of options) {
+    const g = opt.group ?? "";
+    if (g !== currentGroup || groups.length === 0) {
+      groups.push({ name: g, items: [] });
+      currentGroup = g;
+    }
+    groups[groups.length - 1].items.push(opt);
+  }
+
+  // Calculate portal position
+  const getMenuStyle = (): React.CSSProperties => {
+    if (!triggerRef.current) return {};
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const menuMaxH = 340;
+
+    if (spaceAbove > spaceBelow) {
+      // Open upward
+      const availH = Math.min(menuMaxH, spaceAbove - 16);
+      return {
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 8,
+        left: rect.left,
+        maxHeight: `${availH}px`,
+      };
+    } else {
+      // Open downward
+      const availH = Math.min(menuMaxH, spaceBelow - 16);
+      return {
+        position: "fixed",
+        top: rect.bottom + 8,
+        left: rect.left,
+        maxHeight: `${availH}px`,
+      };
+    }
+  };
+
+  return (
+    <div>
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 rounded-lg text-xs font-medium transition-all"
+        style={{
+          height: "28px",
+          background: "rgba(255,255,255,0.06)",
+          color: "rgba(255,255,255,0.85)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          minWidth: "120px",
+        }}
+      >
+        {selected?.extra}
+        <span className="flex-1 text-left truncate">{selected?.label}</span>
+        <ChevronDown size={12} style={{ opacity: 0.5 }} />
+      </button>
+
+      {open && createPortal(
+        <>
+          <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setOpen(false)} />
+          <div
+            className="rounded-xl overflow-hidden shadow-2xl"
+            style={{
+              ...getMenuStyle(),
+              zIndex: 9999,
+              background: "hsl(0,0%,12%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              overflowY: "auto",
+              minWidth: "200px",
+            }}
+          >
+            {groups.map((group) => (
+              <div key={group.name}>
+                {group.name && (
+                  <div
+                    className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: "rgba(255,255,255,0.3)" }}
+                  >
+                    {group.name}
+                  </div>
+                )}
+                {group.items.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.id);
+                      setOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors text-left"
+                    style={{
+                      color: value === opt.id ? "white" : "rgba(255,255,255,0.7)",
+                      background: value === opt.id ? "rgba(255,255,255,0.08)" : "transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (value !== opt.id) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (value !== opt.id) e.currentTarget.style.background = value === opt.id ? "rgba(255,255,255,0.08)" : "transparent";
+                    }}
+                  >
+                    {opt.extra}
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+function SegmentToggle({
+  values,
+  labels,
+  active,
+  onChange,
+}: {
+  values: string[];
+  labels?: string[];
+  active: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div
+      className="flex rounded-lg overflow-hidden"
+      style={{
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      {values.map((v, i) => (
+        <button
+          key={v}
+          onClick={() => onChange(v)}
+          className="px-2.5 text-xs font-medium transition-all"
+          style={{
+            height: "28px",
+            background: active === v ? "var(--accent)" : "transparent",
+            color: active === v ? "white" : "rgba(255,255,255,0.5)",
+          }}
+        >
+          {labels ? labels[i] : v}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Divider() {
+  return <div className="self-stretch w-px my-1" style={{ background: "rgba(255,255,255,0.08)" }} />;
+}
+
+function ColorSwatch({
+  label,
+  value,
+  fallback,
+  onChangeColor,
+}: {
+  label: string;
+  value: string;
+  fallback: string;
+  onChangeColor: (color: string) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const display = value || fallback;
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => ref.current?.click()}
+        className="w-6 h-6 rounded shrink-0"
+        style={{ background: display, border: "1px solid rgba(255,255,255,0.2)" }}
+        title={label}
+      />
+      <input
+        ref={ref}
+        type="color"
+        value={display.startsWith("#") ? display : "#888888"}
+        onChange={(e) => onChangeColor(e.target.value)}
+        className="sr-only"
+      />
+      <span className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.6)", width: "60px" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function ColorPopover({
+  state,
+  onChange,
+  theme,
+}: {
+  state: AppState;
+  onChange: (patch: Partial<AppState>) => void;
+  theme: ReturnType<typeof getTheme>;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const hasCustom = state.customHeaderBg || state.customHeaderText || state.customRowBg ||
+    state.customAltRowBg || state.customRowText || state.customBorderColor;
+
+  const getPopoverStyle = (): React.CSSProperties => {
+    if (!triggerRef.current) return {};
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const popoverW = 220;
+    // Keep popover within viewport horizontally
+    const left = Math.min(rect.right - popoverW, Math.max(8, rect.left));
+
+    if (spaceAbove > spaceBelow) {
+      return { position: "fixed", bottom: window.innerHeight - rect.top + 8, left, width: `${popoverW}px` };
+    } else {
+      return { position: "fixed", top: rect.bottom + 8, left, width: `${popoverW}px` };
+    }
+  };
+
+  return (
+    <div>
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium transition-all"
+        style={{
+          height: "28px",
+          background: "rgba(255,255,255,0.06)",
+          color: hasCustom ? "white" : "rgba(255,255,255,0.5)",
+          border: `1px solid ${hasCustom ? "var(--accent)" : "rgba(255,255,255,0.08)"}`,
+        }}
+      >
+        <div className="flex -space-x-1">
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customHeaderBg || theme.accentBg, border: "1px solid rgba(0,0,0,0.3)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowBg || theme.rowBg, border: "1px solid rgba(0,0,0,0.3)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowText || theme.rowText, border: "1px solid rgba(0,0,0,0.3)" }} />
+        </div>
+        Customize
+      </button>
+
+      {open && createPortal(
+        <>
+          <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setOpen(false)} />
+          <div
+            className="rounded-xl p-4 shadow-2xl"
+            style={{
+              ...getPopoverStyle(),
+              zIndex: 9999,
+              background: "hsl(0,0%,12%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Custom Colors
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <ColorSwatch label="Header bg" value={state.customHeaderBg} fallback={theme.accentBg} onChangeColor={(c) => onChange({ customHeaderBg: c })} />
+              <ColorSwatch label="Header text" value={state.customHeaderText} fallback={theme.accentText} onChangeColor={(c) => onChange({ customHeaderText: c })} />
+              <ColorSwatch label="Row bg" value={state.customRowBg} fallback={theme.rowBg} onChangeColor={(c) => onChange({ customRowBg: c })} />
+              <ColorSwatch label="Alt row bg" value={state.customAltRowBg} fallback={theme.altRowBg} onChangeColor={(c) => onChange({ customAltRowBg: c })} />
+              <ColorSwatch label="Text color" value={state.customRowText} fallback={theme.rowText} onChangeColor={(c) => onChange({ customRowText: c })} />
+              <ColorSwatch label="Border" value={state.customBorderColor} fallback={theme.borderColor} onChangeColor={(c) => onChange({ customBorderColor: c })} />
+            </div>
+            {hasCustom && (
+              <button
+                onClick={() => onChange({
+                  customHeaderBg: "", customHeaderText: "", customRowBg: "",
+                  customAltRowBg: "", customRowText: "", customBorderColor: "",
+                })}
+                className="w-full mt-3 py-1.5 rounded-lg text-[10px] font-medium transition-all"
+                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}
+              >
+                Reset to theme defaults
+              </button>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+export default function ControlPanel({ state, onChange }: ControlPanelProps) {
   const colorRef = useRef<HTMLInputElement>(null);
+  const currentTheme = getTheme(state.themeId);
 
   const setBackground = (bg: Background) => onChange({ background: bg });
 
+  const themeOptions = themes.map((t) => ({
+    id: t.id,
+    label: t.name,
+    group: t.group,
+    extra: (
+      <div
+        className="w-5 h-3.5 rounded-sm shrink-0"
+        style={{
+          background: t.headerBg,
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+      />
+    ),
+  }));
+
+  const bgOptions = presetBackgrounds.map(({ label, bg }) => ({
+    id: label,
+    label,
+    extra: (
+      <div
+        className="w-5 h-3.5 rounded-sm shrink-0"
+        style={{
+          background:
+            bg.type === "none"
+              ? "repeating-conic-gradient(#555 0% 25%, #333 0% 50%) 0 0 / 8px 8px"
+              : bg.type === "gradient"
+              ? bg.gradient
+              : bg.color,
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+      />
+    ),
+  }));
+
+  const currentBgLabel =
+    presetBackgrounds.find(
+      (p) => JSON.stringify(p.bg) === JSON.stringify(state.background)
+    )?.label ?? "Custom";
+
   return (
-    <div className="h-full overflow-y-auto flex flex-col gap-1 p-5 bg-[#0f0f14] text-white">
-      {/* Input */}
-      <Section title="Input">
-        <div className="flex gap-2 mb-2">
-          {(["auto", "json", "markdown"] as const).map((fmt) => (
-            <button
-              key={fmt}
-              onClick={() => onChange({ inputFormat: fmt })}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                state.inputFormat === fmt
-                  ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
-            >
-              {fmt === "auto" ? "Auto" : fmt.toUpperCase()}
-            </button>
-          ))}
-        </div>
-        <textarea
-          value={state.rawInput}
-          onChange={(e) => onChange({ rawInput: e.target.value })}
-          placeholder="Paste JSON or Markdown table here…"
-          className="w-full h-36 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-sm font-mono text-zinc-200 placeholder-zinc-600 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </Section>
+    <div className="shrink-0 pb-4 px-4">
+      <div
+        className="panel-glow control-panel-grid px-5 py-3.5 rounded-2xl mx-auto"
+        style={{
+          background: "var(--panel-bg)",
+          border: "1px solid var(--panel-border)",
+          boxShadow: "none",
+        }}
+      >
+        {/* Row 1: Appearance */}
+        <div className="control-row">
+          <ControlGroup label="Theme">
+            <Dropdown
+              value={state.themeId}
+              options={themeOptions}
+              onChange={(id) => onChange({ themeId: id })}
+            />
+          </ControlGroup>
 
-      {/* Title */}
-      <Section title="Title">
-        <input
-          type="text"
-          value={state.title}
-          onChange={(e) => onChange({ title: e.target.value })}
-          placeholder="Optional table title…"
-          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </Section>
+          <ControlGroup label="Background">
+            <div className="flex items-center gap-2">
+              <Dropdown
+                value={currentBgLabel}
+                options={bgOptions}
+                onChange={(label) => {
+                  const preset = presetBackgrounds.find((p) => p.label === label);
+                  if (preset) setBackground(preset.bg);
+                }}
+              />
+              <button
+                onClick={() => colorRef.current?.click()}
+                className="w-7 h-7 rounded-lg shrink-0 transition-all"
+                style={{
+                  background: state.background.color ?? state.background.gradient ?? "#1a1a2e",
+                  border: "2px solid rgba(255,255,255,0.15)",
+                }}
+                title="Custom color"
+              />
+              <input
+                ref={colorRef}
+                type="color"
+                defaultValue={state.background.color ?? "#1a1a2e"}
+                onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
+                className="sr-only"
+              />
+            </div>
+          </ControlGroup>
 
-      {/* Theme */}
-      <Section title="Theme">
-        <div className="grid grid-cols-3 gap-2">
-          {themes.map((theme) => (
-            <button
-              key={theme.id}
-              onClick={() => onChange({ themeId: theme.id })}
-              title={theme.name}
-              className={`relative h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                state.themeId === theme.id
-                  ? "border-indigo-500 scale-[1.03]"
-                  : "border-transparent hover:border-zinc-600"
-              }`}
+          <ControlGroup label="Colors">
+            <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
+          </ControlGroup>
+
+          <Divider />
+
+          <ControlGroup label="Font">
+            <Dropdown
+              value={state.fontFamily}
+              options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
+              onChange={(id) => onChange({ fontFamily: id })}
+            />
+          </ControlGroup>
+
+          <ControlGroup label="Size">
+            <SegmentToggle
+              values={["12", "14", "16", "18"]}
+              active={String(state.fontSize)}
+              onChange={(v) => onChange({ fontSize: Number(v) })}
+            />
+          </ControlGroup>
+
+          <ControlGroup label="Title">
+            <input
+              type="text"
+              value={state.title}
+              onChange={(e) => onChange({ title: e.target.value })}
+              placeholder="Untitled"
+              className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
               style={{
-                background: theme.headerBg.includes("gradient")
-                  ? theme.headerBg
-                  : theme.headerBg,
+                height: "28px",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                padding: "0 10px",
+                width: "120px",
               }}
-            >
-              <div
-                className="absolute bottom-0 left-0 right-0 h-5"
-                style={{ background: theme.rowBg }}
+            />
+          </ControlGroup>
+        </div>
+
+        {/* Row 2: Layout & Toggles */}
+        <div className="control-row">
+          <ControlGroup label="Window">
+            <SegmentToggle
+              values={["mac", "windows", "none"]}
+              labels={["macOS", "Win", "None"]}
+              active={state.windowStyle}
+              onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })}
+            />
+          </ControlGroup>
+
+          <ControlGroup label="Padding">
+            <SegmentToggle
+              values={["0", "16", "32", "48", "64", "128"]}
+              active={String(state.padding)}
+              onChange={(v) => onChange({ padding: Number(v) })}
+            />
+          </ControlGroup>
+
+          <ControlGroup label="Radius">
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="32"
+                step="1"
+                value={state.borderRadius}
+                onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
+                style={{
+                  width: "70px",
+                  accentColor: "var(--accent)",
+                }}
               />
               <span
-                className="absolute bottom-1 left-0 right-0 text-center text-[9px] font-medium"
-                style={{ color: theme.rowText }}
+                className="text-xs font-medium tabular-nums"
+                style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
               >
-                {theme.name}
+                {state.borderRadius}
               </span>
-            </button>
-          ))}
-        </div>
-      </Section>
-
-      {/* Background */}
-      <Section title="Background">
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          {presetBackgrounds.map(({ label, bg }) => (
-            <button
-              key={label}
-              onClick={() => setBackground(bg)}
-              title={label}
-              className={`h-10 rounded-lg border-2 transition-all relative ${
-                JSON.stringify(state.background) === JSON.stringify(bg)
-                  ? "border-indigo-500 scale-[1.05]"
-                  : "border-transparent hover:border-zinc-600"
-              }`}
-              style={{
-                background:
-                  bg.type === "none"
-                    ? "repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 12px 12px"
-                    : bg.type === "gradient"
-                    ? bg.gradient
-                    : bg.color,
-              }}
-            >
-              <span className="absolute inset-0 flex items-end justify-center pb-1 text-[8px] text-white/60">
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
-        {/* Custom solid color */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => colorRef.current?.click()}
-            className="w-8 h-8 rounded-md border border-zinc-700 overflow-hidden"
-            style={{ background: state.background.color ?? "#1a1a2e" }}
-            title="Custom color"
-          />
-          <input
-            ref={colorRef}
-            type="color"
-            defaultValue={state.background.color ?? "#1a1a2e"}
-            onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
-            className="sr-only"
-          />
-          <span className="text-xs text-zinc-500">Custom color</span>
-
-          {/* Custom gradient text */}
-          <input
-            type="text"
-            placeholder="CSS gradient…"
-            className="flex-1 bg-zinc-900 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            onBlur={(e) => {
-              if (e.target.value.trim()) {
-                setBackground({ type: "gradient", gradient: e.target.value.trim() });
-              }
-            }}
-          />
-        </div>
-      </Section>
-
-      {/* Window Style */}
-      <Section title="Window Frame">
-        <div className="flex gap-2">
-          {(["mac", "windows", "none"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => onChange({ windowStyle: s })}
-              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                state.windowStyle === s
-                  ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
-            >
-              {s === "mac" ? "macOS" : s === "windows" ? "Windows" : "None"}
-            </button>
-          ))}
-        </div>
-      </Section>
-
-      {/* Options */}
-      <Section title="Options">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-zinc-300">Grid lines</span>
-            <button
-              onClick={() => onChange({ showGrid: !state.showGrid })}
-              className={`w-10 h-5 rounded-full transition-all relative ${
-                state.showGrid ? "bg-indigo-600" : "bg-zinc-700"
-              }`}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${
-                  state.showGrid ? "left-5" : "left-0.5"
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-zinc-300">Striped rows</span>
-            <button
-              onClick={() => onChange({ stripedRows: !state.stripedRows })}
-              className={`w-10 h-5 rounded-full transition-all relative ${
-                state.stripedRows ? "bg-indigo-600" : "bg-zinc-700"
-              }`}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${
-                  state.stripedRows ? "left-5" : "left-0.5"
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-zinc-300">Font size</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onChange({ fontSize: Math.max(10, state.fontSize - 1) })}
-                className="w-6 h-6 bg-zinc-800 rounded text-zinc-300 text-sm hover:bg-zinc-700"
-              >
-                −
-              </button>
-              <span className="text-sm text-zinc-200 w-6 text-center">{state.fontSize}</span>
-              <button
-                onClick={() => onChange({ fontSize: Math.min(24, state.fontSize + 1) })}
-                className="w-6 h-6 bg-zinc-800 rounded text-zinc-300 text-sm hover:bg-zinc-700"
-              >
-                +
-              </button>
             </div>
-          </div>
-        </div>
-      </Section>
+          </ControlGroup>
 
-      {/* Export */}
-      <div className="mt-auto pt-4">
-        <button
-          onClick={onExport}
-          disabled={exporting}
-          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-all text-sm shadow-lg shadow-indigo-900/40"
-        >
-          {exporting ? "Exporting…" : "Export PNG"}
-        </button>
+          <Divider />
+
+          <ControlGroup label="Grid">
+            <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
+          </ControlGroup>
+
+          <ControlGroup label="Striped">
+            <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
+          </ControlGroup>
+
+          <ControlGroup label="1st Row">
+            <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
+          </ControlGroup>
+
+          <ControlGroup label="1st Col">
+            <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
+          </ControlGroup>
+
+          <ControlGroup label="Row #">
+            <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
+          </ControlGroup>
+        </div>
       </div>
     </div>
   );
