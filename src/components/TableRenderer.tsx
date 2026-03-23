@@ -355,8 +355,8 @@ export default function TableRenderer({
                   key={i}
                   onClick={() => handleSort(i)}
                   style={{
-                    background: highlightFirstRow ? theme.accentBg : theme.headerBg,
-                    color: highlightFirstRow ? theme.accentText : theme.headerText,
+                    background: highlightFirstRow ? theme.headerBg : theme.accentBg,
+                    color: highlightFirstRow ? theme.headerText : theme.accentText,
                     padding: "12px 18px",
                     textAlign: "left",
                     fontWeight: 600,
