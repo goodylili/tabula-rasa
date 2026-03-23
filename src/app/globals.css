@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a10;
-  --foreground: #e5e7eb;
+  --background: hsl(0, 0%, 5%);
+  --foreground: hsl(0, 0%, 93%);
+  --panel-bg: hsl(0, 0%, 9.4%);
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --accent: #6e56cf;
+  --accent-hover: #7c66dc;
 }
 
 @theme inline {
@@ -33,9 +37,23 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Bottom panel gradient border effect */
+.panel-glow {
+  position: relative;
+}
+.panel-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }

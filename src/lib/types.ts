@@ -15,6 +15,7 @@ export interface Background {
 export interface TableTheme {
   id: string;
   name: string;
+  group?: string;
   headerBg: string;
   headerText: string;
   rowBg: string;
@@ -24,6 +25,9 @@ export interface TableTheme {
   fontFamily: string;
   borderRadius: string;
   shadow: string;
+  // Used for first-row / first-col highlights
+  accentBg: string;
+  accentText: string;
 }
 
 export interface ExportSettings {
@@ -34,7 +38,7 @@ export interface ExportSettings {
 
 export interface AppState {
   rawInput: string;
-  inputFormat: "json" | "markdown" | "auto";
+  inputFormat: "json" | "markdown" | "csv" | "postgresql" | "auto";
   tableData: TableData | null;
   themeId: string;
   background: Background;
@@ -42,5 +46,7 @@ export interface AppState {
   fontSize: number;
   showGrid: boolean;
   stripedRows: boolean;
+  highlightFirstRow: boolean;
+  highlightFirstCol: boolean;
   title: string;
 }

@@ -9,27 +9,29 @@ import WindowFrame from "./WindowFrame";
 
 interface PreviewCanvasProps {
   state: AppState;
+  exporting?: boolean;
 }
 
 const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
-  ({ state }, ref) => {
+  ({ state, exporting = false }, ref) => {
     const theme = getTheme(state.themeId);
     const bgCss = backgroundToCss(state.background);
 
     if (!state.tableData) {
       return (
-        <div className="flex-1 flex items-center justify-center bg-[#0a0a10]">
+        <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="text-5xl mb-4">⬛</div>
-            <p className="text-zinc-500 text-sm">Paste JSON or a Markdown table to preview</p>
+            <div className="text-5xl mb-4" style={{ opacity: 0.3 }}>T</div>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Paste JSON, CSV, Markdown, or PostgreSQL to preview
+            </p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0a0a10] overflow-auto p-8">
-        {/* This outer div is exported */}
+      <div className="flex-1 flex items-center justify-center overflow-auto p-8">
         <div
           ref={ref}
           style={{
@@ -50,7 +52,10 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
                 fontSize={state.fontSize}
                 showGrid={state.showGrid}
                 stripedRows={state.stripedRows}
+                highlightFirstRow={state.highlightFirstRow}
+                highlightFirstCol={state.highlightFirstCol}
                 title={state.windowStyle === "none" ? state.title : undefined}
+                interactive={!exporting}
               />
             </WindowFrame>
           </div>
