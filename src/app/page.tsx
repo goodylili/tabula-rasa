@@ -30,6 +30,7 @@ const DEFAULT_STATE: AppState = {
   highlightFirstCol: false,
   showRowNumbers: false,
   borderRadius: 12,
+  padding: 48,
   fontFamily: "",
   customHeaderBg: "",
   customHeaderText: "",

@@ -48,7 +48,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
           ref={ref}
           style={{
             background: bgCss,
-            padding: "48px",
+            padding: `${state.padding}px`,
             borderRadius: `${state.borderRadius}px`,
             display: "inline-block",
           }}

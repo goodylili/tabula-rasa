@@ -51,6 +51,7 @@ export interface AppState {
   highlightFirstCol: boolean;
   showRowNumbers: boolean;
   borderRadius: number;
+  padding: number;
   fontFamily: string;
   // Custom color overrides (empty string = use theme default)
   customHeaderBg: string;

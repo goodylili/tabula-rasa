@@ -395,6 +395,15 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
           </div>
         </ControlGroup>
 
+        {/* Padding */}
+        <ControlGroup label="Padding">
+          <SegmentToggle
+            values={["0", "16", "32", "48", "64", "128"]}
+            active={String(state.padding)}
+            onChange={(v) => onChange({ padding: Number(v) })}
+          />
+        </ControlGroup>
+
         {/* Window Frame */}
         <ControlGroup label="Window">
           <SegmentToggle
