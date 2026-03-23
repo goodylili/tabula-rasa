@@ -32,33 +32,29 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
 
     return (
       <div className="flex-1 flex items-center justify-center overflow-auto p-8">
+        {/* Exported div — no max-width so the table is never clipped */}
         <div
           ref={ref}
           style={{
             background: bgCss,
             padding: "48px",
-            borderRadius: "20px",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: "500px",
+            borderRadius: `${state.borderRadius}px`,
+            display: "inline-block",
           }}
         >
-          <div style={{ width: "100%", maxWidth: "900px" }}>
-            <WindowFrame style={state.windowStyle} title={state.title || undefined}>
-              <TableRenderer
-                data={state.tableData}
-                theme={theme}
-                fontSize={state.fontSize}
-                showGrid={state.showGrid}
-                stripedRows={state.stripedRows}
-                highlightFirstRow={state.highlightFirstRow}
-                highlightFirstCol={state.highlightFirstCol}
-                title={state.windowStyle === "none" ? state.title : undefined}
-                interactive={!exporting}
-              />
-            </WindowFrame>
-          </div>
+          <WindowFrame style={state.windowStyle} title={state.title || undefined}>
+            <TableRenderer
+              data={state.tableData}
+              theme={theme}
+              fontSize={state.fontSize}
+              showGrid={state.showGrid}
+              stripedRows={state.stripedRows}
+              highlightFirstRow={state.highlightFirstRow}
+              highlightFirstCol={state.highlightFirstCol}
+              title={state.windowStyle === "none" ? state.title : undefined}
+              interactive={!exporting}
+            />
+          </WindowFrame>
         </div>
       </div>
     );

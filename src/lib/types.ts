@@ -48,5 +48,6 @@ export interface AppState {
   stripedRows: boolean;
   highlightFirstRow: boolean;
   highlightFirstCol: boolean;
+  borderRadius: number;
   title: string;
 }

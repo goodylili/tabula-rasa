@@ -327,6 +327,30 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
           />
         </ControlGroup>
 
+        {/* Border Radius */}
+        <ControlGroup label="Radius">
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min="0"
+              max="32"
+              step="1"
+              value={state.borderRadius}
+              onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
+              style={{
+                width: "70px",
+                accentColor: "var(--accent)",
+              }}
+            />
+            <span
+              className="text-xs font-medium tabular-nums"
+              style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
+            >
+              {state.borderRadius}
+            </span>
+          </div>
+        </ControlGroup>
+
         {/* Title */}
         <ControlGroup label="Title">
           <input

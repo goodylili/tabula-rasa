@@ -126,9 +126,6 @@ export default function TableRenderer({
           ? `1px solid ${theme.borderColor}`
           : "none",
       whiteSpace: "nowrap" as const,
-      maxWidth: "300px",
-      overflow: "hidden" as const,
-      textOverflow: "ellipsis" as const,
       fontWeight: isHighlighted ? 600 : 400,
     };
   };

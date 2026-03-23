@@ -2,6 +2,12 @@ import { Background } from "./types";
 
 export const presetBackgrounds: { label: string; bg: Background }[] = [
   {
+    label: "Transparent",
+    bg: {
+      type: "none",
+    },
+  },
+  {
     label: "Cosmic",
     bg: {
       type: "gradient",
@@ -76,12 +82,6 @@ export const presetBackgrounds: { label: string; bg: Background }[] = [
     bg: {
       type: "solid",
       color: "#ffffff",
-    },
-  },
-  {
-    label: "Transparent",
-    bg: {
-      type: "none",
     },
   },
 ];

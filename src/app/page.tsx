@@ -25,6 +25,7 @@ const DEFAULT_STATE: AppState = {
   stripedRows: true,
   highlightFirstRow: false,
   highlightFirstCol: false,
+  borderRadius: 12,
   title: "",
 };
 

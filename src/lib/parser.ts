@@ -117,54 +117,99 @@ export function parseCSV(input: string): TableData | null {
 }
 
 export function parsePostgreSQL(input: string): TableData | null {
-  // Parses PostgreSQL \d output or psql query result format:
-  //  column1 | column2 | column3
-  // ---------+---------+---------
-  //  val1    | val2    | val3
-  //
-  // Also handles CREATE TABLE and INSERT INTO statements.
-
   const trimmed = input.trim();
 
-  // Try CREATE TABLE
+  // Helper: parse SQL VALUES tuples, respecting quoted strings
+  const parseValueTuples = (valuesStr: string): string[][] => {
+    const rows: string[][] = [];
+    // Match each (...) tuple
+    const tupleRegex = /\(([^)]*(?:'[^']*'[^)]*)*)\)/g;
+    let match;
+    while ((match = tupleRegex.exec(valuesStr)) !== null) {
+      const inner = match[1];
+      const cells: string[] = [];
+      let current = "";
+      let inQuote = false;
+      for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (inQuote) {
+          if (ch === "'" && inner[i + 1] === "'") {
+            current += "'";
+            i++;
+          } else if (ch === "'") {
+            inQuote = false;
+          } else {
+            current += ch;
+          }
+        } else {
+          if (ch === "'") {
+            inQuote = true;
+          } else if (ch === ",") {
+            cells.push(current.trim());
+            current = "";
+          } else {
+            current += ch;
+          }
+        }
+      }
+      cells.push(current.trim());
+      // Clean up NULL values
+      rows.push(cells.map((c) => (c.toUpperCase() === "NULL" ? "" : c)));
+    }
+    return rows;
+  };
+
+  // Helper: parse CREATE TABLE column definitions (respects parentheses in types like VARCHAR(50))
+  const parseCreateColumns = (body: string): { headers: string[]; types: string[] } => {
+    const headers: string[] = [];
+    const types: string[] = [];
+    let depth = 0;
+    let current = "";
+
+    for (const ch of body) {
+      if (ch === "(") depth++;
+      else if (ch === ")") depth--;
+
+      if (ch === "," && depth === 0) {
+        const def = current.trim();
+        if (def && !def.match(/^\s*(PRIMARY|UNIQUE|CHECK|FOREIGN|CONSTRAINT)/i)) {
+          const parts = def.split(/\s+/);
+          headers.push(parts[0].replace(/"/g, ""));
+          types.push(parts.slice(1).join(" "));
+        }
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    // Last column
+    const def = current.trim();
+    if (def && !def.match(/^\s*(PRIMARY|UNIQUE|CHECK|FOREIGN|CONSTRAINT)/i)) {
+      const parts = def.split(/\s+/);
+      headers.push(parts[0].replace(/"/g, ""));
+      types.push(parts.slice(1).join(" "));
+    }
+
+    return { headers, types };
+  };
+
+  // Try CREATE TABLE — use non-greedy match to find the closing ) of the column list
+  // by finding the ); that ends the statement
   const createMatch = trimmed.match(
-    /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\w."]+\s*\(([\s\S]+)\)/i
+    /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\w."]+\s*\(([\s\S]+?)\)\s*;/i
   );
   if (createMatch) {
-    const body = createMatch[1];
-    const colDefs = body
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.match(/^\s*(PRIMARY|UNIQUE|CHECK|FOREIGN|CONSTRAINT)/i));
+    const { headers, types } = parseCreateColumns(createMatch[1]);
 
-    const headers = colDefs.map((def) => {
-      const parts = def.split(/\s+/);
-      return parts[0].replace(/"/g, "");
-    });
-    const types = colDefs.map((def) => {
-      const parts = def.split(/\s+/);
-      return parts.slice(1).join(" ");
-    });
-
-    // If there are INSERT statements following, parse data from them
+    // Look for INSERT statements following
     const insertMatch = trimmed.match(
       /INSERT\s+INTO\s+[\w."]+\s*(?:\([^)]+\))?\s*VALUES\s*([\s\S]+)/i
     );
     if (insertMatch) {
-      const valuesStr = insertMatch[1];
-      const rowMatches = valuesStr.match(/\(([^)]+)\)/g);
-      if (rowMatches) {
-        const rows = rowMatches.map((rm) =>
-          rm
-            .replace(/^\(|\)$/g, "")
-            .split(",")
-            .map((v) => v.trim().replace(/^'|'$/g, ""))
-        );
-        return { headers, rows };
-      }
+      const rows = parseValueTuples(insertMatch[1]);
+      if (rows.length > 0) return { headers, rows };
     }
 
-    // Just the schema, show types as a single row
     return { headers, rows: [types] };
   }
 
@@ -174,17 +219,8 @@ export function parsePostgreSQL(input: string): TableData | null {
   );
   if (insertOnly) {
     const headers = insertOnly[1].split(",").map((h) => h.trim().replace(/"/g, ""));
-    const valuesStr = insertOnly[2];
-    const rowMatches = valuesStr.match(/\(([^)]+)\)/g);
-    if (rowMatches) {
-      const rows = rowMatches.map((rm) =>
-        rm
-          .replace(/^\(|\)$/g, "")
-          .split(",")
-          .map((v) => v.trim().replace(/^'|'$/g, ""))
-      );
-      return { headers, rows };
-    }
+    const rows = parseValueTuples(insertOnly[2]);
+    if (rows.length > 0) return { headers, rows };
   }
 
   // Try psql output format (pipe-separated with +--- separator)
@@ -192,13 +228,13 @@ export function parsePostgreSQL(input: string): TableData | null {
   if (lines.length >= 3) {
     const sepIdx = lines.findIndex((l) => /^[-+]+$/.test(l));
     if (sepIdx >= 1) {
-      const parseRow = (line: string): string[] =>
-        line.split("|").map((c) => c.trim()).filter((_, i, arr) => {
-          // psql sometimes has empty leading/trailing from | at edges
-          if (i === 0 && arr[0] === "") return false;
-          if (i === arr.length - 1 && arr[arr.length - 1] === "") return false;
-          return true;
-        });
+      const parseRow = (line: string): string[] => {
+        const parts = line.split("|").map((c) => c.trim());
+        // Remove empty leading/trailing from outer pipes
+        if (parts.length > 0 && parts[0] === "") parts.shift();
+        if (parts.length > 0 && parts[parts.length - 1] === "") parts.pop();
+        return parts;
+      };
 
       const headers = parseRow(lines[sepIdx - 1]);
       const rows = lines
