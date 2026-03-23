@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { AppState, Background } from "@/lib/types";
-import { themes } from "@/lib/themes";
+import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
 import { ChevronDown } from "lucide-react";
@@ -192,8 +192,118 @@ function Divider() {
   return <div className="self-stretch w-px my-1" style={{ background: "rgba(255,255,255,0.08)" }} />;
 }
 
+function ColorSwatch({
+  label,
+  value,
+  fallback,
+  onChangeColor,
+}: {
+  label: string;
+  value: string;
+  fallback: string;
+  onChangeColor: (color: string) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const display = value || fallback;
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => ref.current?.click()}
+        className="w-6 h-6 rounded shrink-0"
+        style={{ background: display, border: "1px solid rgba(255,255,255,0.2)" }}
+        title={label}
+      />
+      <input
+        ref={ref}
+        type="color"
+        value={display.startsWith("#") ? display : "#888888"}
+        onChange={(e) => onChangeColor(e.target.value)}
+        className="sr-only"
+      />
+      <span className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.6)", width: "60px" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function ColorPopover({
+  state,
+  onChange,
+  theme,
+}: {
+  state: AppState;
+  onChange: (patch: Partial<AppState>) => void;
+  theme: ReturnType<typeof getTheme>;
+}) {
+  const [open, setOpen] = useState(false);
+  const hasCustom = state.customHeaderBg || state.customHeaderText || state.customRowBg ||
+    state.customAltRowBg || state.customRowText || state.customBorderColor;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium transition-all"
+        style={{
+          height: "28px",
+          background: "rgba(255,255,255,0.06)",
+          color: hasCustom ? "white" : "rgba(255,255,255,0.5)",
+          border: `1px solid ${hasCustom ? "var(--accent)" : "rgba(255,255,255,0.08)"}`,
+        }}
+      >
+        <div className="flex -space-x-1">
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customHeaderBg || theme.accentBg, border: "1px solid rgba(0,0,0,0.3)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowBg || theme.rowBg, border: "1px solid rgba(0,0,0,0.3)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowText || theme.rowText, border: "1px solid rgba(0,0,0,0.3)" }} />
+        </div>
+        Customize
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute bottom-full mb-2 right-0 z-50 rounded-xl p-4 shadow-2xl"
+            style={{
+              background: "hsl(0,0%,12%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              width: "220px",
+            }}
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Custom Colors
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <ColorSwatch label="Header bg" value={state.customHeaderBg} fallback={theme.accentBg} onChangeColor={(c) => onChange({ customHeaderBg: c })} />
+              <ColorSwatch label="Header text" value={state.customHeaderText} fallback={theme.accentText} onChangeColor={(c) => onChange({ customHeaderText: c })} />
+              <ColorSwatch label="Row bg" value={state.customRowBg} fallback={theme.rowBg} onChangeColor={(c) => onChange({ customRowBg: c })} />
+              <ColorSwatch label="Alt row bg" value={state.customAltRowBg} fallback={theme.altRowBg} onChangeColor={(c) => onChange({ customAltRowBg: c })} />
+              <ColorSwatch label="Text color" value={state.customRowText} fallback={theme.rowText} onChangeColor={(c) => onChange({ customRowText: c })} />
+              <ColorSwatch label="Border" value={state.customBorderColor} fallback={theme.borderColor} onChangeColor={(c) => onChange({ customBorderColor: c })} />
+            </div>
+            {hasCustom && (
+              <button
+                onClick={() => onChange({
+                  customHeaderBg: "", customHeaderText: "", customRowBg: "",
+                  customAltRowBg: "", customRowText: "", customBorderColor: "",
+                })}
+                className="w-full mt-3 py-1.5 rounded-lg text-[10px] font-medium transition-all"
+                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}
+              >
+                Reset to theme defaults
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ControlPanel({ state, onChange }: ControlPanelProps) {
   const colorRef = useRef<HTMLInputElement>(null);
+  const currentTheme = getTheme(state.themeId);
 
   const setBackground = (bg: Background) => onChange({ background: bg });
 
@@ -378,6 +488,13 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
               width: "120px",
             }}
           />
+        </ControlGroup>
+
+        <Divider />
+
+        {/* Colors */}
+        <ControlGroup label="Colors">
+          <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
         </ControlGroup>
       </div>
     </div>

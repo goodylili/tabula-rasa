@@ -16,7 +16,17 @@ interface PreviewCanvasProps {
 
 const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
   ({ state, exporting = false, onCellEdit, onHeaderEdit }, ref) => {
-    const theme = getTheme(state.themeId);
+    const baseTheme = getTheme(state.themeId);
+    // Merge custom color overrides on top of theme
+    const theme = {
+      ...baseTheme,
+      ...(state.customHeaderBg && { accentBg: state.customHeaderBg, headerBg: state.customHeaderBg }),
+      ...(state.customHeaderText && { accentText: state.customHeaderText, headerText: state.customHeaderText }),
+      ...(state.customRowBg && { rowBg: state.customRowBg }),
+      ...(state.customAltRowBg && { altRowBg: state.customAltRowBg }),
+      ...(state.customRowText && { rowText: state.customRowText }),
+      ...(state.customBorderColor && { borderColor: state.customBorderColor }),
+    };
     const bgCss = backgroundToCss(state.background);
 
     if (!state.tableData) {

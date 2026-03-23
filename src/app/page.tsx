@@ -30,6 +30,12 @@ const DEFAULT_STATE: AppState = {
   highlightFirstCol: false,
   borderRadius: 12,
   fontFamily: "",
+  customHeaderBg: "",
+  customHeaderText: "",
+  customRowBg: "",
+  customAltRowBg: "",
+  customRowText: "",
+  customBorderColor: "",
   title: "",
 };
 
@@ -89,10 +95,16 @@ export default function Home() {
     setState((prev) => {
       const next = { ...prev, ...patch };
 
-      // When theme changes, reset background to the theme's default
+      // When theme changes, reset background and custom colors
       if ("themeId" in patch && patch.themeId !== prev.themeId) {
         const newTheme = getTheme(patch.themeId!);
         next.background = { type: "gradient", gradient: newTheme.defaultBg };
+        next.customHeaderBg = "";
+        next.customHeaderText = "";
+        next.customRowBg = "";
+        next.customAltRowBg = "";
+        next.customRowText = "";
+        next.customBorderColor = "";
       }
 
       if ("rawInput" in patch || "inputFormat" in patch) {

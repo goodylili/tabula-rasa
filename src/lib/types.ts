@@ -51,5 +51,12 @@ export interface AppState {
   highlightFirstCol: boolean;
   borderRadius: number;
   fontFamily: string;
+  // Custom color overrides (empty string = use theme default)
+  customHeaderBg: string;
+  customHeaderText: string;
+  customRowBg: string;
+  customAltRowBg: string;
+  customRowText: string;
+  customBorderColor: string;
   title: string;
 }
