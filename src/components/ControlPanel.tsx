@@ -162,7 +162,7 @@ function Dropdown({
         <>
           <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
-            className="rounded-xl overflow-hidden shadow-2xl"
+            className="rounded-xl overflow-hidden"
             style={{
               ...getMenuStyle(),
               zIndex: 9999,
@@ -170,6 +170,9 @@ function Dropdown({
               border: "1px solid var(--border)",
               overflowY: "auto",
               minWidth: "200px",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
             }}
           >
             {groups.map((group) => (
@@ -346,12 +349,15 @@ function ColorPopover({
         <>
           <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
-            className="rounded-xl p-4 shadow-2xl"
+            className="rounded-xl p-4"
             style={{
               ...getPopoverStyle(),
               zIndex: 9999,
               background: "var(--elevated-bg)",
               border: "1px solid var(--border)",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
             }}
           >
             <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-subtle)" }}>

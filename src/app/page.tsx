@@ -18,21 +18,20 @@ const DEFAULT_STATE: AppState = {
   rawInput: SAMPLE_MARKDOWN,
   inputFormat: "auto",
   tableData: detectAndParse(SAMPLE_MARKDOWN),
-  themeId: "candy",
+  themeId: "resend",
   background: {
-    type: "gradient",
-    gradient: "linear-gradient(140deg, #A58EFB, #E9BFF8)",
+    type: "none",
   },
-  windowStyle: "mac",
-  fontSize: 14,
+  windowStyle: "none",
+  fontSize: 18,
   showGrid: true,
   stripedRows: true,
-  highlightFirstRow: false,
-  highlightFirstCol: false,
-  showRowNumbers: false,
-  borderRadius: 12,
-  padding: 48,
-  fontFamily: "",
+  highlightFirstRow: true,
+  highlightFirstCol: true,
+  showRowNumbers: true,
+  borderRadius: 32,
+  padding: 64,
+  fontFamily: "'Noto Sans Mono', monospace",
   customHeaderBg: "",
   customHeaderText: "",
   customRowBg: "",
@@ -350,7 +349,7 @@ export default function Home() {
               <>
                 <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
                 <div
-                  className="rounded-xl overflow-hidden shadow-2xl"
+                  className="rounded-xl overflow-hidden"
                   style={{
                     position: "fixed",
                     top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
@@ -359,6 +358,9 @@ export default function Home() {
                     background: "var(--elevated-bg)",
                     border: "1px solid var(--border)",
                     minWidth: "180px",
+                    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+                    backdropFilter: "none",
+                    WebkitBackdropFilter: "none",
                   }}
                 >
                   {EXPORT_FORMATS.map((fmt) => (
