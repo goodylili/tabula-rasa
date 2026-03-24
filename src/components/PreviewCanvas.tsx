@@ -4,7 +4,7 @@ import React, { forwardRef, useCallback, useEffect, useRef, useState } from "rea
 import { AppState } from "@/lib/types";
 import { getTheme } from "@/lib/themes";
 import { backgroundToCss } from "@/lib/backgrounds";
-import { transformThemeForLightMode } from "@/lib/lightMode";
+import { transformThemeForLightMode, transformBackgroundForLightMode } from "@/lib/lightMode";
 import TableRenderer from "./TableRenderer";
 import WindowFrame from "./WindowFrame";
 
@@ -33,7 +33,10 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
       theme = transformThemeForLightMode(theme);
     }
 
-    const bgCss = backgroundToCss(state.background);
+    let bgCss = backgroundToCss(state.background);
+    if (colorMode === "light") {
+      bgCss = transformBackgroundForLightMode(bgCss);
+    }
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);

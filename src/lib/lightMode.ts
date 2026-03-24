@@ -117,6 +117,33 @@ function transformColor(color: string, role: "bg" | "text" | "border" | "accent-
   }
 }
 
+// Transform a background CSS string for light mode
+export function transformBackgroundForLightMode(bgCss: string): string {
+  if (bgCss === "transparent") return bgCss;
+
+  // Replace all hex colors in the string (handles gradients too)
+  return bgCss.replace(/#[0-9a-fA-F]{3,8}/g, (match) => {
+    const rgb = hexToRgb(match);
+    if (!rgb) return match;
+    const [h, s, l] = rgbToHsl(...rgb);
+    // Dark colors → light equivalents
+    if (l < 0.2) {
+      const [r, g, b] = hslToRgb(h, s * 0.3, 0.95);
+      return rgbToHex(r, g, b);
+    }
+    if (l < 0.4) {
+      const [r, g, b] = hslToRgb(h, s * 0.5, 0.88);
+      return rgbToHex(r, g, b);
+    }
+    // Already light or medium — keep but lighten slightly
+    if (l < 0.6) {
+      const [r, g, b] = hslToRgb(h, s * 0.7, 0.82);
+      return rgbToHex(r, g, b);
+    }
+    return match; // already light
+  });
+}
+
 export function transformThemeForLightMode(theme: TableTheme): TableTheme {
   return {
     ...theme,
