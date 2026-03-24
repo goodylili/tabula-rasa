@@ -4,21 +4,23 @@ import React, { forwardRef } from "react";
 import { AppState } from "@/lib/types";
 import { getTheme } from "@/lib/themes";
 import { backgroundToCss } from "@/lib/backgrounds";
+import { transformThemeForLightMode } from "@/lib/lightMode";
 import TableRenderer from "./TableRenderer";
 import WindowFrame from "./WindowFrame";
 
 interface PreviewCanvasProps {
   state: AppState;
   exporting?: boolean;
+  colorMode?: "dark" | "light";
   onCellEdit?: (rowIndex: number, colIndex: number, value: string) => void;
   onHeaderEdit?: (colIndex: number, value: string) => void;
 }
 
 const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
-  ({ state, exporting = false, onCellEdit, onHeaderEdit }, ref) => {
+  ({ state, exporting = false, colorMode = "dark", onCellEdit, onHeaderEdit }, ref) => {
     const baseTheme = getTheme(state.themeId);
     // Merge custom color overrides on top of theme
-    const theme = {
+    let theme = {
       ...baseTheme,
       ...(state.customHeaderBg && { accentBg: state.customHeaderBg, headerBg: state.customHeaderBg }),
       ...(state.customHeaderText && { accentText: state.customHeaderText, headerText: state.customHeaderText }),
@@ -27,6 +29,12 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
       ...(state.customRowText && { rowText: state.customRowText }),
       ...(state.customBorderColor && { borderColor: state.customBorderColor }),
     };
+
+    // Transform theme colors for light mode
+    if (colorMode === "light") {
+      theme = transformThemeForLightMode(theme);
+    }
+
     const bgCss = backgroundToCss(state.background);
 
     if (!state.tableData) {

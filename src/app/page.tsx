@@ -385,11 +385,12 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="flex-1 min-h-0 overflow-auto flex items-center justify-center relative">
+      <main className="flex-1 min-h-0 overflow-hidden flex relative">
         <PreviewCanvas
           ref={canvasRef}
           state={state}
           exporting={exporting}
+          colorMode={colorMode}
           onCellEdit={handleCellEdit}
           onHeaderEdit={handleHeaderEdit}
         />
