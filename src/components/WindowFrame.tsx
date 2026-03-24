@@ -16,12 +16,12 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
     return (
       <div
         style={{
-          background: "rgba(30,30,40,0.85)",
+          background: "var(--window-bg)",
           backdropFilter: "blur(20px)",
           borderRadius: borderRadius != null ? `${borderRadius}px` : "12px",
           overflow: "hidden",
           boxShadow: "none",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid var(--border-subtle)",
         }}
       >
         {/* Mac titlebar */}
@@ -31,8 +31,8 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
             alignItems: "center",
             gap: "8px",
             padding: "13px 16px",
-            background: "rgba(255,255,255,0.04)",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            background: "var(--window-surface)",
+            borderBottom: "1px solid var(--window-border)",
           }}
         >
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff5f57" }} />
@@ -43,7 +43,7 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
               style={{
                 flex: 1,
                 textAlign: "center",
-                color: "rgba(255,255,255,0.4)",
+                color: "var(--text-faint)",
                 fontSize: "12px",
                 fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
                 marginLeft: "-44px",
@@ -62,12 +62,12 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
   return (
     <div
       style={{
-        background: "rgba(30,30,40,0.85)",
+        background: "var(--window-bg)",
         backdropFilter: "blur(20px)",
         borderRadius: borderRadius != null ? `${borderRadius}px` : "8px",
         overflow: "hidden",
         boxShadow: "none",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-subtle)",
       }}
     >
       <div
@@ -76,13 +76,13 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
           alignItems: "center",
           justifyContent: "space-between",
           padding: "10px 12px",
-          background: "rgba(255,255,255,0.04)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: "var(--window-surface)",
+          borderBottom: "1px solid var(--window-border)",
         }}
       >
         <span
           style={{
-            color: "rgba(255,255,255,0.5)",
+            color: "var(--text-muted)",
             fontSize: "12px",
             fontFamily: "Segoe UI, sans-serif",
           }}
@@ -99,10 +99,10 @@ export default function WindowFrame({ style, children, title, borderRadius }: Wi
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "rgba(255,255,255,0.4)",
+                color: "var(--text-faint)",
                 fontSize: "11px",
                 borderRadius: "3px",
-                background: "rgba(255,255,255,0.05)",
+                background: "var(--surface)",
               }}
             >
               {icon}

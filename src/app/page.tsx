@@ -10,7 +10,7 @@ import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import InputDrawer from "@/components/InputDrawer";
-import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database } from "lucide-react";
+import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database, Sun, Moon } from "lucide-react";
 
 const STORAGE_KEY = "tabula-rasa-state";
 
@@ -74,6 +74,7 @@ export default function Home() {
   const [exportOpen, setExportOpen] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [colorMode, setColorMode] = useState<"dark" | "light">("dark");
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
@@ -91,6 +92,24 @@ export default function Home() {
     handler(mql);
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  // Load color mode preference
+  useEffect(() => {
+    const saved = localStorage.getItem("tabula-rasa-color-mode");
+    if (saved === "light" || saved === "dark") {
+      setColorMode(saved);
+      document.documentElement.setAttribute("data-theme", saved);
+    }
+  }, []);
+
+  const toggleColorMode = useCallback(() => {
+    setColorMode((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("tabula-rasa-color-mode", next);
+      return next;
+    });
   }, []);
 
   // Auto-save to localStorage every second
@@ -221,7 +240,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "hsl(0, 0%, 5%)" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* Top Nav Bar */}
       <nav
         className="flex items-center justify-between px-5 shrink-0"
@@ -238,13 +257,29 @@ export default function Home() {
           >
             T
           </div>
-          <span className="font-semibold text-sm tracking-tight text-white nav-brand-text">tabula-rasa</span>
-          <span className="text-xs ml-1 nav-brand-text" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <span className="font-semibold text-sm tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>tabula-rasa</span>
+          <span className="text-xs ml-1 nav-brand-text" style={{ color: "var(--text-subtle)" }}>
             by Goodness
           </span>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Light/Dark toggle */}
+          <button
+            onClick={toggleColorMode}
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+            style={{
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border-subtle)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+            title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+
           <input
             ref={fileRef}
             type="file"
@@ -256,12 +291,12 @@ export default function Home() {
             onClick={() => fileRef.current?.click()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
-              background: "rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
             title="Import file"
           >
             <Upload size={13} />
@@ -272,12 +307,12 @@ export default function Home() {
             onClick={() => setInputOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
-              background: "rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
             title="Edit table data"
           >
             <FileText size={13} />
@@ -321,8 +356,8 @@ export default function Home() {
                     top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
                     right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
                     zIndex: 9999,
-                    background: "hsl(0,0%,12%)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "var(--elevated-bg)",
+                    border: "1px solid var(--border)",
                     minWidth: "180px",
                   }}
                 >
@@ -331,13 +366,13 @@ export default function Home() {
                       key={fmt.id}
                       onClick={() => handleExport(fmt.id)}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
-                      style={{ color: "rgba(255,255,255,0.8)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                      style={{ color: "var(--text-primary)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
                       {fmt.label}
-                      <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px" }}>
+                      <span className="ml-auto" style={{ color: "var(--text-subtle)", fontSize: "10px" }}>
                         .{fmt.ext}
                       </span>
                     </button>

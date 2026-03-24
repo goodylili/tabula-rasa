@@ -34,13 +34,15 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="text-5xl mb-4" style={{ opacity: 0.3 }}>T</div>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <p className="text-sm" style={{ color: "var(--text-subtle)" }}>
               Paste JSON, CSV, Markdown, or PostgreSQL to preview
             </p>
           </div>
         </div>
       );
     }
+
+    const isTransparent = state.background.type === "none";
 
     return (
       <div className="flex-1 flex items-start justify-center overflow-auto p-4 sm:p-8">
@@ -51,6 +53,11 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
             padding: `${state.padding}px`,
             borderRadius: `${state.borderRadius}px`,
             display: "inline-block",
+            maxWidth: "100%",
+            ...(isTransparent && {
+              outline: "1px dashed var(--border)",
+              outlineOffset: "-1px",
+            }),
           }}
         >
           <WindowFrame style={state.windowStyle} title={state.title || undefined} borderRadius={state.borderRadius}>

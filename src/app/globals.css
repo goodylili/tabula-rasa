@@ -1,12 +1,73 @@
 @import "tailwindcss";
 
 :root {
+  /* Dark mode (default) */
   --background: hsl(0, 0%, 5%);
   --foreground: hsl(0, 0%, 93%);
   --panel-bg: hsl(0, 0%, 9.4%);
   --panel-border: rgba(255, 255, 255, 0.12);
   --accent: #6e56cf;
   --accent-hover: #7c66dc;
+
+  /* UI chrome colors */
+  --elevated-bg: hsl(0, 0%, 12%);
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --surface-active: rgba(255, 255, 255, 0.08);
+  --surface-strong: rgba(255, 255, 255, 0.15);
+  --text-primary: rgba(255, 255, 255, 0.85);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-faint: rgba(255, 255, 255, 0.4);
+  --text-subtle: rgba(255, 255, 255, 0.3);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --overlay: rgba(0, 0, 0, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --window-bg: rgba(30, 30, 40, 0.85);
+  --window-surface: rgba(255, 255, 255, 0.04);
+  --window-border: rgba(255, 255, 255, 0.06);
+  --code-bg: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.1);
+  --input-border: rgba(255, 255, 255, 0.25);
+  --swatch-border: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="light"] {
+  --background: hsl(0, 0%, 97%);
+  --foreground: hsl(0, 0%, 10%);
+  --panel-bg: hsl(0, 0%, 100%);
+  --panel-border: rgba(0, 0, 0, 0.1);
+  --accent: #6e56cf;
+  --accent-hover: #5b45b0;
+
+  --elevated-bg: hsl(0, 0%, 100%);
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-hover: rgba(0, 0, 0, 0.07);
+  --surface-active: rgba(0, 0, 0, 0.06);
+  --surface-strong: rgba(0, 0, 0, 0.1);
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.65);
+  --text-muted: rgba(0, 0, 0, 0.5);
+  --text-faint: rgba(0, 0, 0, 0.4);
+  --text-subtle: rgba(0, 0, 0, 0.3);
+  --border: rgba(0, 0, 0, 0.12);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --overlay: rgba(0, 0, 0, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.12);
+  --window-bg: rgba(245, 245, 248, 0.95);
+  --window-surface: rgba(0, 0, 0, 0.03);
+  --window-border: rgba(0, 0, 0, 0.06);
+  --code-bg: rgba(0, 0, 0, 0.06);
+  --input-bg: rgba(0, 0, 0, 0.05);
+  --input-border: rgba(0, 0, 0, 0.2);
+  --swatch-border: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
 }
 
 @theme inline {
@@ -37,11 +98,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Bottom panel gradient border effect */
@@ -55,7 +116,7 @@ body {
   left: 24px;
   right: 24px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
 }
 
 /* Control panel layout */

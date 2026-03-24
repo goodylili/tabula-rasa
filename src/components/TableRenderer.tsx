@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TableData, TableTheme } from "@/lib/types";
 import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
 
@@ -15,7 +15,7 @@ function renderCellContent(text: string): React.ReactNode {
         <code
           key={i}
           style={{
-            background: "rgba(255,255,255,0.08)",
+            background: "var(--code-bg)",
             padding: "1px 5px",
             borderRadius: "4px",
             fontSize: "0.9em",
@@ -62,8 +62,8 @@ function EditableCell({
           }}
           style={{
             width: "100%",
-            background: "rgba(255,255,255,0.1)",
-            border: "1px solid rgba(255,255,255,0.25)",
+            background: "var(--input-bg)",
+            border: "1px solid var(--input-border)",
             borderRadius: "3px",
             padding: "5px 10px",
             color: "inherit",
@@ -123,9 +123,36 @@ export default function TableRenderer({
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [filters, setFilters] = useState<Record<number, string>>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [colWidths, setColWidths] = useState<Record<number, number>>({});
+  const [resizing, setResizing] = useState<{ col: number; startX: number; startW: number } | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
 
   const isGradient = (val: string) =>
     val.includes("gradient") || val.includes("linear") || val.includes("radial");
+
+  const hasCustomWidths = Object.keys(colWidths).length > 0;
+
+  // Column resize logic
+  const handleResizeStart = useCallback((colIdx: number, e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const th = (e.target as HTMLElement).closest("th");
+    if (!th) return;
+    const startW = th.getBoundingClientRect().width;
+    setResizing({ col: colIdx, startX: e.clientX, startW });
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleResizeMove = useCallback((e: React.PointerEvent) => {
+    if (!resizing) return;
+    const delta = e.clientX - resizing.startX;
+    const newWidth = Math.max(40, resizing.startW + delta);
+    setColWidths((prev) => ({ ...prev, [resizing.col]: newWidth }));
+  }, [resizing]);
+
+  const handleResizeEnd = useCallback(() => {
+    setResizing(null);
+  }, []);
 
   const handleSort = (colIdx: number) => {
     if (!interactive) return;
@@ -144,6 +171,11 @@ export default function TableRenderer({
   const handleFilter = (colIdx: number, value: string) => {
     setFilters((prev) => ({ ...prev, [colIdx]: value }));
   };
+
+  // Reset column widths when data changes
+  useEffect(() => {
+    setColWidths({});
+  }, [data.headers.length]);
 
   const processedRows = useMemo(() => {
     let rows = [...data.rows];
@@ -211,7 +243,36 @@ export default function TableRenderer({
           : "none",
       whiteSpace: "nowrap" as const,
       fontWeight: isHighlightedCol ? 600 : 400,
+      overflow: "hidden" as const,
     };
+  };
+
+  // Resize handle element
+  const resizeHandle = (colIdx: number) => {
+    if (!interactive) return null;
+    return (
+      <div
+        onPointerDown={(e) => handleResizeStart(colIdx, e)}
+        onPointerMove={handleResizeMove}
+        onPointerUp={handleResizeEnd}
+        style={{
+          position: "absolute",
+          top: 0,
+          right: -2,
+          bottom: 0,
+          width: 5,
+          cursor: "col-resize",
+          zIndex: 1,
+          background: resizing?.col === colIdx ? theme.borderColor : "transparent",
+        }}
+        onMouseEnter={(e) => {
+          if (!resizing) (e.currentTarget.style.background = theme.borderColor);
+        }}
+        onMouseLeave={(e) => {
+          if (resizing?.col !== colIdx) (e.currentTarget.style.background = "transparent");
+        }}
+      />
+    );
   };
 
   return (
@@ -264,7 +325,7 @@ export default function TableRenderer({
               style={{
                 padding: "2px 8px",
                 borderRadius: "4px",
-                background: "rgba(255,255,255,0.1)",
+                background: "var(--input-bg)",
                 color: theme.rowText,
                 border: "none",
                 cursor: "pointer",
@@ -275,10 +336,27 @@ export default function TableRenderer({
               Clear filters
             </button>
           )}
+          {hasCustomWidths && (
+            <button
+              onClick={() => setColWidths({})}
+              style={{
+                padding: "2px 8px",
+                borderRadius: "4px",
+                background: "var(--input-bg)",
+                color: theme.rowText,
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 500,
+                fontSize: `${fontSize - 2}px`,
+              }}
+            >
+              Reset widths
+            </button>
+          )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             style={{
-              background: showFilters ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)",
+              background: showFilters ? "var(--surface-strong)" : "var(--surface)",
               border: "none",
               borderRadius: "6px",
               padding: "4px 8px",
@@ -301,13 +379,24 @@ export default function TableRenderer({
 
       <div style={{ overflowX: "auto" }}>
         <table
+          ref={tableRef}
           style={{
-            width: "100%",
+            width: hasCustomWidths ? undefined : "100%",
+            tableLayout: hasCustomWidths ? "fixed" : "auto",
             borderCollapse: showGrid ? "collapse" : "separate",
             borderSpacing: showGrid ? 0 : "0 2px",
             fontSize: `${fontSize}px`,
           }}
         >
+          {/* Colgroup for explicit widths */}
+          {hasCustomWidths && (
+            <colgroup>
+              {showRowNumbers && <col style={{ width: colWidths[-1] ?? 48 }} />}
+              {data.headers.map((_, i) => (
+                <col key={i} style={{ width: colWidths[i] ?? undefined }} />
+              ))}
+            </colgroup>
+          )}
           <thead>
             {/* Filter row */}
             {interactive && showFilters && (
@@ -337,7 +426,7 @@ export default function TableRenderer({
                       placeholder="Filter..."
                       style={{
                         width: "100%",
-                        background: "rgba(255,255,255,0.08)",
+                        background: "var(--code-bg)",
                         border: `1px solid ${theme.borderColor}`,
                         borderRadius: "4px",
                         padding: "3px 8px",
@@ -357,6 +446,7 @@ export default function TableRenderer({
               {showRowNumbers && (
                 <th
                   style={{
+                    position: "relative",
                     background: highlightFirstRow ? theme.headerBg : theme.accentBg,
                     color: highlightFirstRow ? theme.headerText : theme.accentText,
                     padding: "12px 12px",
@@ -377,6 +467,7 @@ export default function TableRenderer({
                   key={i}
                   onClick={() => handleSort(i)}
                   style={{
+                    position: "relative",
                     background: highlightFirstRow ? theme.headerBg : theme.accentBg,
                     color: highlightFirstRow ? theme.headerText : theme.accentText,
                     padding: "12px 18px",
@@ -395,6 +486,7 @@ export default function TableRenderer({
                     whiteSpace: "nowrap",
                     cursor: interactive ? "pointer" : "default",
                     userSelect: interactive ? "none" : "auto",
+                    overflow: "hidden",
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -411,6 +503,7 @@ export default function TableRenderer({
                       </span>
                     )}
                   </span>
+                  {resizeHandle(i)}
                 </th>
               ))}
             </tr>

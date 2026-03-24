@@ -19,7 +19,7 @@ function ControlLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="text-[11px] font-medium mb-1.5 select-none"
-      style={{ color: "rgba(255,255,255,0.4)" }}
+      style={{ color: "var(--text-faint)" }}
     >
       {children}
     </div>
@@ -45,7 +45,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       style={{
         width: "36px",
         height: "20px",
-        background: on ? "var(--accent)" : "rgba(255,255,255,0.12)",
+        background: on ? "var(--accent)" : "var(--border)",
       }}
     >
       <div
@@ -147,9 +147,9 @@ function Dropdown({
         className="flex items-center gap-2 px-3 rounded-lg text-xs font-medium transition-all"
         style={{
           height: "28px",
-          background: "rgba(255,255,255,0.06)",
-          color: "rgba(255,255,255,0.85)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "var(--surface)",
+          color: "var(--text-primary)",
+          border: "1px solid var(--border-subtle)",
           minWidth: "120px",
         }}
       >
@@ -166,8 +166,8 @@ function Dropdown({
             style={{
               ...getMenuStyle(),
               zIndex: 9999,
-              background: "hsl(0,0%,12%)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--elevated-bg)",
+              border: "1px solid var(--border)",
               overflowY: "auto",
               minWidth: "200px",
             }}
@@ -177,7 +177,7 @@ function Dropdown({
                 {group.name && (
                   <div
                     className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
+                    style={{ color: "var(--text-subtle)" }}
                   >
                     {group.name}
                   </div>
@@ -191,14 +191,14 @@ function Dropdown({
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors text-left"
                     style={{
-                      color: value === opt.id ? "white" : "rgba(255,255,255,0.7)",
-                      background: value === opt.id ? "rgba(255,255,255,0.08)" : "transparent",
+                      color: value === opt.id ? "var(--foreground)" : "var(--text-secondary)",
+                      background: value === opt.id ? "var(--surface-active)" : "transparent",
                     }}
                     onMouseEnter={(e) => {
-                      if (value !== opt.id) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      if (value !== opt.id) e.currentTarget.style.background = "var(--surface)";
                     }}
                     onMouseLeave={(e) => {
-                      if (value !== opt.id) e.currentTarget.style.background = value === opt.id ? "rgba(255,255,255,0.08)" : "transparent";
+                      if (value !== opt.id) e.currentTarget.style.background = value === opt.id ? "var(--surface-active)" : "transparent";
                     }}
                   >
                     {opt.extra}
@@ -230,8 +230,8 @@ function SegmentToggle({
     <div
       className="flex rounded-lg overflow-hidden"
       style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--surface)",
+        border: "1px solid var(--border-subtle)",
       }}
     >
       {values.map((v, i) => (
@@ -242,7 +242,7 @@ function SegmentToggle({
           style={{
             height: "28px",
             background: active === v ? "var(--accent)" : "transparent",
-            color: active === v ? "white" : "rgba(255,255,255,0.5)",
+            color: active === v ? "white" : "var(--text-muted)",
           }}
         >
           {labels ? labels[i] : v}
@@ -253,7 +253,7 @@ function SegmentToggle({
 }
 
 function Divider() {
-  return <div className="self-stretch w-px my-1" style={{ background: "rgba(255,255,255,0.08)" }} />;
+  return <div className="self-stretch w-px my-1" style={{ background: "var(--border-subtle)" }} />;
 }
 
 function ColorSwatch({
@@ -274,7 +274,7 @@ function ColorSwatch({
       <button
         onClick={() => ref.current?.click()}
         className="w-6 h-6 rounded shrink-0"
-        style={{ background: display, border: "1px solid rgba(255,255,255,0.2)" }}
+        style={{ background: display, border: "1px solid var(--border-strong)" }}
         title={label}
       />
       <input
@@ -284,7 +284,7 @@ function ColorSwatch({
         onChange={(e) => onChangeColor(e.target.value)}
         className="sr-only"
       />
-      <span className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.6)", width: "60px" }}>
+      <span className="text-[10px] truncate" style={{ color: "var(--text-secondary)", width: "60px" }}>
         {label}
       </span>
     </div>
@@ -329,15 +329,15 @@ function ColorPopover({
         className="flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium transition-all"
         style={{
           height: "28px",
-          background: "rgba(255,255,255,0.06)",
-          color: hasCustom ? "white" : "rgba(255,255,255,0.5)",
-          border: `1px solid ${hasCustom ? "var(--accent)" : "rgba(255,255,255,0.08)"}`,
+          background: "var(--surface)",
+          color: hasCustom ? "var(--foreground)" : "var(--text-muted)",
+          border: `1px solid ${hasCustom ? "var(--accent)" : "var(--border-subtle)"}`,
         }}
       >
         <div className="flex -space-x-1">
-          <div className="w-3 h-3 rounded-full" style={{ background: state.customHeaderBg || theme.accentBg, border: "1px solid rgba(0,0,0,0.3)" }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowBg || theme.rowBg, border: "1px solid rgba(0,0,0,0.3)" }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowText || theme.rowText, border: "1px solid rgba(0,0,0,0.3)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customHeaderBg || theme.accentBg, border: "1px solid var(--swatch-border)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowBg || theme.rowBg, border: "1px solid var(--swatch-border)" }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowText || theme.rowText, border: "1px solid var(--swatch-border)" }} />
         </div>
         Customize
       </button>
@@ -350,11 +350,11 @@ function ColorPopover({
             style={{
               ...getPopoverStyle(),
               zIndex: 9999,
-              background: "hsl(0,0%,12%)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--elevated-bg)",
+              border: "1px solid var(--border)",
             }}
           >
-            <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-subtle)" }}>
               Custom Colors
             </div>
             <div className="flex flex-col gap-2.5">
@@ -372,7 +372,7 @@ function ColorPopover({
                   customAltRowBg: "", customRowText: "", customBorderColor: "",
                 })}
                 className="w-full mt-3 py-1.5 rounded-lg text-[10px] font-medium transition-all"
-                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}
+                style={{ background: "var(--surface)", color: "var(--text-muted)" }}
               >
                 Reset to theme defaults
               </button>
@@ -400,7 +400,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
         className="w-5 h-3.5 rounded-sm shrink-0"
         style={{
           background: t.headerBg,
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "1px solid var(--border)",
         }}
       />
     ),
@@ -419,7 +419,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
               : bg.type === "gradient"
               ? bg.gradient
               : bg.color,
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "1px solid var(--border)",
         }}
       />
     ),
@@ -457,7 +457,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
               className="w-7 h-7 rounded-lg shrink-0 transition-all"
               style={{
                 background: state.background.color ?? state.background.gradient ?? "#1a1a2e",
-                border: "2px solid rgba(255,255,255,0.15)",
+                border: "2px solid var(--border-strong)",
               }}
               title="Custom color"
             />
@@ -502,9 +502,9 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
             style={{
               height: "28px",
-              background: "rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.85)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--surface)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-subtle)",
               padding: "0 10px",
               width: "120px",
             }}
@@ -547,7 +547,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             />
             <span
               className="text-xs font-medium tabular-nums"
-              style={{ color: "rgba(255,255,255,0.5)", width: "24px" }}
+              style={{ color: "var(--text-muted)", width: "24px" }}
             >
               {state.borderRadius}
             </span>
@@ -594,7 +594,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
           <button
             onClick={onToggleCollapse}
             className="control-panel-toggle flex items-center justify-between w-full text-xs font-medium"
-            style={{ color: "rgba(255,255,255,0.6)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             <span>Controls</span>
             <ChevronDown

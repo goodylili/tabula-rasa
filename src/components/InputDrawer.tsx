@@ -37,7 +37,7 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
     <>
       <div
         className="fixed inset-0 z-40"
-        style={{ background: "rgba(0,0,0,0.5)" }}
+        style={{ background: "var(--overlay)" }}
         onClick={onClose}
       />
 
@@ -47,7 +47,7 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
           width: "min(420px, 100vw)",
           background: "var(--panel-bg)",
           borderLeft: "1px solid var(--panel-border)",
-          boxShadow: "-8px 0 32px rgba(0,0,0,0.4)",
+          boxShadow: `-8px 0 32px var(--shadow-color)`,
         }}
       >
         <div
@@ -57,16 +57,16 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
             borderBottom: "1px solid var(--panel-border)",
           }}
         >
-          <span className="text-sm font-semibold text-white">Table Data</span>
+          <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Table Data</span>
           <button
             onClick={onClose}
             className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
             style={{
-              color: "rgba(255,255,255,0.5)",
-              background: "rgba(255,255,255,0.06)",
+              color: "var(--text-muted)",
+              background: "var(--surface)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
           >
             <X size={14} />
           </button>
@@ -83,15 +83,15 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
                 background:
                   state.inputFormat === fmt.id
                     ? "var(--accent)"
-                    : "rgba(255,255,255,0.06)",
+                    : "var(--surface)",
                 color:
                   state.inputFormat === fmt.id
                     ? "white"
-                    : "rgba(255,255,255,0.5)",
+                    : "var(--text-muted)",
                 border: `1px solid ${
                   state.inputFormat === fmt.id
                     ? "transparent"
-                    : "rgba(255,255,255,0.08)"
+                    : "var(--border-subtle)"
                 }`,
               }}
             >
@@ -102,7 +102,7 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
 
         {/* Hint */}
         <div className="px-5 pb-2">
-          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", lineHeight: "1.4" }}>
+          <p style={{ fontSize: "11px", color: "var(--text-subtle)", lineHeight: "1.4" }}>
             Switch formats to convert the current table data. Paste any format and use Auto to detect.
           </p>
         </div>
@@ -113,11 +113,11 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
             value={state.rawInput}
             onChange={(e) => onChange({ rawInput: e.target.value })}
             placeholder={`Paste your table data here...\n\nSupported formats:\n• JSON: [{...}, {...}]\n• CSV: col1,col2\\nval1,val2\n• Markdown: | col1 | col2 |\n• PostgreSQL: CREATE TABLE / INSERT INTO`}
-            className="w-full h-full rounded-xl text-sm font-mono resize-none focus:outline-none focus:ring-1 focus:ring-white/20"
+            className="w-full h-full rounded-xl text-sm font-mono resize-none focus:outline-none focus:ring-1"
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.85)",
+              background: "var(--surface)",
+              border: "1px solid var(--border-subtle)",
+              color: "var(--text-primary)",
               padding: "16px",
             }}
           />
