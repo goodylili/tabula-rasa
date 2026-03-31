@@ -6,6 +6,7 @@ import { getTheme } from "@/lib/themes";
 import { backgroundToCss } from "@/lib/backgrounds";
 import { transformThemeForLightMode, transformBackgroundForLightMode } from "@/lib/lightMode";
 import TableRenderer from "./TableRenderer";
+import ChartRenderer from "./ChartRenderer";
 import WindowFrame from "./WindowFrame";
 
 interface PreviewCanvasProps {
@@ -76,7 +77,8 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     }, [
       state.tableData, state.padding, state.fontSize, state.windowStyle,
       state.showGrid, state.showRowNumbers, state.borderRadius,
-      state.fontFamily, state.title, exporting, updateScale,
+      state.fontFamily, state.title, state.vizMode, state.chartConfig,
+      exporting, updateScale,
     ]);
 
     useEffect(() => {
@@ -135,21 +137,33 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
             }}
           >
             <WindowFrame style={state.windowStyle} title={state.title || undefined} borderRadius={state.borderRadius}>
-              <TableRenderer
-                data={state.tableData}
-                theme={theme}
-                fontSize={state.fontSize}
-                showGrid={state.showGrid}
-                stripedRows={state.stripedRows}
-                highlightFirstRow={state.highlightFirstRow}
-                highlightFirstCol={state.highlightFirstCol}
-                showRowNumbers={state.showRowNumbers}
-                fontOverride={state.fontFamily || undefined}
-                title={state.windowStyle === "none" ? state.title : undefined}
-                interactive={!exporting}
-                onCellEdit={onCellEdit}
-                onHeaderEdit={onHeaderEdit}
-              />
+              {state.vizMode === "table" ? (
+                <TableRenderer
+                  data={state.tableData}
+                  theme={theme}
+                  fontSize={state.fontSize}
+                  showGrid={state.showGrid}
+                  stripedRows={state.stripedRows}
+                  highlightFirstRow={state.highlightFirstRow}
+                  highlightFirstCol={state.highlightFirstCol}
+                  showRowNumbers={state.showRowNumbers}
+                  fontOverride={state.fontFamily || undefined}
+                  title={state.windowStyle === "none" ? state.title : undefined}
+                  interactive={!exporting}
+                  onCellEdit={onCellEdit}
+                  onHeaderEdit={onHeaderEdit}
+                />
+              ) : (
+                <ChartRenderer
+                  data={state.tableData}
+                  theme={theme}
+                  config={state.chartConfig}
+                  vizMode={state.vizMode}
+                  fontSize={state.fontSize}
+                  fontOverride={state.fontFamily || undefined}
+                  title={state.windowStyle === "none" ? state.title : undefined}
+                />
+              )}
             </WindowFrame>
           </div>
         </div>

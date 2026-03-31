@@ -4,13 +4,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { AppState } from "@/lib/types";
-import { detectAndParse, SAMPLE_MARKDOWN } from "@/lib/parser";
+import { detectAndParse, SAMPLE_MARKDOWN, SAMPLE_CHART_MARKDOWN } from "@/lib/parser";
 import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
 import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import InputDrawer from "@/components/InputDrawer";
-import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database, Sun, Moon } from "lucide-react";
+import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database, Sun, Moon, Table, BarChart3, LineChart, PieChart } from "lucide-react";
+import { VisualizationMode } from "@/lib/types";
 
 const STORAGE_KEY = "tabula-rasa-state";
 
@@ -39,6 +40,31 @@ const DEFAULT_STATE: AppState = {
   customRowText: "",
   customBorderColor: "",
   title: "",
+  vizMode: "table",
+  chartConfig: {
+    labelColumn: 0,
+    valueColumns: [1],
+    showLegend: true,
+    showValues: true,
+    bar: {
+      orientation: "vertical",
+      barStyle: "grouped",
+      barRadius: 3,
+      barGap: 2,
+    },
+    line: {
+      curveType: "smooth",
+      showArea: true,
+      showDots: true,
+      lineWidth: 2.5,
+    },
+    pie: {
+      innerRadius: 50,
+      labelPosition: "outside",
+      sortSlices: false,
+      startAngle: 0,
+    },
+  },
 };
 
 function loadState(): AppState {
@@ -49,6 +75,16 @@ function loadState(): AppState {
       const parsed = JSON.parse(saved);
       // Re-parse table data from raw input
       parsed.tableData = detectAndParse(parsed.rawInput, parsed.inputFormat === "auto" ? undefined : parsed.inputFormat);
+      // Deep-merge chartConfig so new sub-configs (bar/line/pie) get defaults
+      if (parsed.chartConfig) {
+        parsed.chartConfig = {
+          ...DEFAULT_STATE.chartConfig,
+          ...parsed.chartConfig,
+          bar: { ...DEFAULT_STATE.chartConfig.bar, ...parsed.chartConfig.bar },
+          line: { ...DEFAULT_STATE.chartConfig.line, ...parsed.chartConfig.line },
+          pie: { ...DEFAULT_STATE.chartConfig.pie, ...parsed.chartConfig.pie },
+        };
+      }
       return { ...DEFAULT_STATE, ...parsed };
     }
   } catch {}
@@ -143,6 +179,42 @@ export default function Home() {
       if ("rawInput" in patch || "inputFormat" in patch) {
         next.tableData = detectAndParse(next.rawInput, next.inputFormat === "auto" ? undefined : next.inputFormat);
       }
+
+      // When switching to a chart mode, check if data has numeric columns
+      if ("vizMode" in patch && patch.vizMode !== "table" && prev.vizMode === "table") {
+        const td = next.tableData;
+        if (td) {
+          const hasNumeric = td.headers.some((_, ci) =>
+            td.rows.some((row) => {
+              const cleaned = (row[ci] || "").replace(/[,$%]/g, "").trim();
+              return cleaned !== "" && !isNaN(Number(cleaned));
+            })
+          );
+          if (!hasNumeric) {
+            // Swap to chart-friendly sample data
+            next.rawInput = SAMPLE_CHART_MARKDOWN;
+            next.tableData = detectAndParse(SAMPLE_CHART_MARKDOWN);
+            next.chartConfig = { ...next.chartConfig, labelColumn: 0, valueColumns: [1, 2, 3], showLegend: true, showValues: true };
+          } else {
+            // Auto-select: first non-numeric col as label, numeric cols as values
+            const numericCols = td.headers
+              .map((_, ci) => ci)
+              .filter((ci) =>
+                td.rows.some((row) => {
+                  const cleaned = (row[ci] || "").replace(/[,$%]/g, "").trim();
+                  return cleaned !== "" && !isNaN(Number(cleaned));
+                })
+              );
+            const labelCol = td.headers.findIndex((_, ci) => !numericCols.includes(ci));
+            next.chartConfig = {
+              ...next.chartConfig,
+              labelColumn: labelCol >= 0 ? labelCol : 0,
+              valueColumns: numericCols.length > 0 ? numericCols : [1],
+            };
+          }
+        }
+      }
+
       return next;
     });
   }, []);
@@ -240,152 +312,209 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
-      {/* Top Nav Bar */}
-      <nav
-        className="flex items-center justify-between px-5 shrink-0"
+      {/* Header */}
+      <header
+        className="shrink-0"
         style={{
-          height: "50px",
           background: "var(--panel-bg)",
           borderBottom: "1px solid var(--panel-border)",
         }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0"
-            style={{ background: "var(--accent)" }}
-          >
-            T
-          </div>
-          <span className="font-semibold text-sm tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>tabula-rasa</span>
-          <span className="text-xs ml-1 nav-brand-text" style={{ color: "var(--text-subtle)" }}>
-            by Goodness
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Light/Dark toggle */}
-          <button
-            onClick={toggleColorMode}
-            className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
-            style={{
-              background: "var(--surface)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border-subtle)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
-            title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json,.csv,.md,.markdown,.sql,.txt"
-            onChange={handleImportFile}
-            className="sr-only"
-          />
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: "var(--surface)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
-            title="Import file"
-          >
-            <Upload size={13} />
-            <span className="nav-btn-label">Import</span>
-          </button>
-
-          <button
-            onClick={() => setInputOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: "var(--surface)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
-            title="Edit table data"
-          >
-            <FileText size={13} />
-            <span className="nav-btn-label">Edit Data</span>
-          </button>
-
-          <div className="flex items-center">
-            <button
-              onClick={() => handleExport("png")}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
-              style={{ background: "var(--accent)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
-            >
-              <Download size={14} />
-              {exporting ? "Exporting..." : "Export"}
-            </button>
-            <button
-              ref={exportBtnRef}
-              onClick={() => setExportOpen(!exportOpen)}
-              disabled={exporting}
-              className="flex items-center py-1.5 px-2 rounded-r-lg text-white transition-all disabled:opacity-50"
+        {/* Top row: Brand + Actions */}
+        <div
+          className="flex items-center justify-between px-5"
+          style={{ height: "52px" }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{
                 background: "var(--accent)",
-                borderLeft: "1px solid rgba(255,255,255,0.2)",
+                boxShadow: "0 2px 8px rgba(110,86,207,0.3)",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
             >
-              <ChevronDown size={12} style={{ opacity: 0.7 }} />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
+                <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+                <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+                <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
+                <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
+              </svg>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold text-sm tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>
+                tabula rasa
+              </span>
+              <span
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded-md nav-brand-text"
+                style={{
+                  color: "var(--text-muted)",
+                  background: "var(--surface)",
+                }}
+              >
+                by Goodness
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Light/Dark toggle */}
+            <button
+              onClick={toggleColorMode}
+              className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+              style={{
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-subtle)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
             </button>
 
-            {exportOpen && createPortal(
-              <>
-                <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
-                <div
-                  className="rounded-xl overflow-hidden"
-                  style={{
-                    position: "fixed",
-                    top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
-                    right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
-                    zIndex: 9999,
-                    background: "var(--elevated-bg)",
-                    border: "1px solid var(--border)",
-                    minWidth: "180px",
-                    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                    backdropFilter: "none",
-                    WebkitBackdropFilter: "none",
-                  }}
-                >
-                  {EXPORT_FORMATS.map((fmt) => (
-                    <button
-                      key={fmt.id}
-                      onClick={() => handleExport(fmt.id)}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
-                      style={{ color: "var(--text-primary)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
-                      {fmt.label}
-                      <span className="ml-auto" style={{ color: "var(--text-subtle)", fontSize: "10px" }}>
-                        .{fmt.ext}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>,
-              document.body
-            )}
+            <div className="w-px h-5 mx-1" style={{ background: "var(--border-subtle)" }} />
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,.csv,.md,.markdown,.sql,.txt"
+              onChange={handleImportFile}
+              className="sr-only"
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-subtle)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              title="Import file"
+            >
+              <Upload size={13} />
+              <span className="nav-btn-label">Import</span>
+            </button>
+
+            <button
+              onClick={() => setInputOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-subtle)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              title="Edit table data"
+            >
+              <FileText size={13} />
+              <span className="nav-btn-label">Edit Data</span>
+            </button>
+
+            <div className="flex items-center">
+              <button
+                onClick={() => handleExport("png")}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "var(--accent)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
+              >
+                <Download size={14} />
+                {exporting ? "Exporting..." : "Export"}
+              </button>
+              <button
+                ref={exportBtnRef}
+                onClick={() => setExportOpen(!exportOpen)}
+                disabled={exporting}
+                className="flex items-center py-1.5 px-2 rounded-r-lg text-white transition-all disabled:opacity-50"
+                style={{
+                  background: "var(--accent)",
+                  borderLeft: "1px solid rgba(255,255,255,0.2)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
+              >
+                <ChevronDown size={12} style={{ opacity: 0.7 }} />
+              </button>
+
+              {exportOpen && createPortal(
+                <>
+                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
+                  <div
+                    className="rounded-xl overflow-hidden"
+                    style={{
+                      position: "fixed",
+                      top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
+                      right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
+                      zIndex: 9999,
+                      background: "var(--elevated-bg)",
+                      border: "1px solid var(--border)",
+                      minWidth: "180px",
+                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+                      backdropFilter: "none",
+                      WebkitBackdropFilter: "none",
+                    }}
+                  >
+                    {EXPORT_FORMATS.map((fmt) => (
+                      <button
+                        key={fmt.id}
+                        onClick={() => handleExport(fmt.id)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
+                        style={{ color: "var(--text-primary)" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
+                        {fmt.label}
+                        <span className="ml-auto" style={{ color: "var(--text-subtle)", fontSize: "10px" }}>
+                          .{fmt.ext}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>,
+                document.body
+              )}
+            </div>
           </div>
         </div>
-      </nav>
+
+        {/* Visualization mode tabs */}
+        <div
+          className="flex items-center gap-1 px-5 pb-2"
+        >
+          {([
+            { mode: "table" as VisualizationMode, icon: <Table size={13} />, label: "Table" },
+            { mode: "bar" as VisualizationMode, icon: <BarChart3 size={13} />, label: "Bar Chart" },
+            { mode: "line" as VisualizationMode, icon: <LineChart size={13} />, label: "Line Chart" },
+            { mode: "pie" as VisualizationMode, icon: <PieChart size={13} />, label: "Pie Chart" },
+          ]).map(({ mode, icon, label }) => (
+            <button
+              key={mode}
+              onClick={() => handleChange({ vizMode: mode })}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: state.vizMode === mode ? "var(--accent)" : "transparent",
+                color: state.vizMode === mode ? "white" : "var(--text-muted)",
+              }}
+              onMouseEnter={(e) => {
+                if (state.vizMode !== mode) e.currentTarget.style.background = "var(--surface)";
+              }}
+              onMouseLeave={(e) => {
+                if (state.vizMode !== mode) e.currentTarget.style.background = "transparent";
+              }}
+            >
+              {icon}
+              <span className="nav-btn-label">{label}</span>
+            </button>
+          ))}
+        </div>
+      </header>
 
       <main className="flex-1 min-h-0 overflow-hidden flex relative">
         <PreviewCanvas

@@ -304,3 +304,12 @@ export const SAMPLE_JSON = `[
   {"Name": "Carol", "Role": "Manager", "Level": "Staff", "Years": 8},
   {"Name": "Dave", "Role": "Engineer", "Level": "Junior", "Years": 1}
 ]`;
+
+export const SAMPLE_CHART_MARKDOWN = `| Month     | Revenue | Expenses | Profit |
+|-----------|---------|----------|--------|
+| January   | 4200    | 3100     | 1100   |
+| February  | 3800    | 2900     | 900    |
+| March     | 5100    | 3400     | 1700   |
+| April     | 4700    | 3200     | 1500   |
+| May       | 5900    | 3800     | 2100   |
+| June      | 6200    | 4100     | 2100   |`;
