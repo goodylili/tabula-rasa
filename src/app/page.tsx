@@ -19,11 +19,11 @@ const DEFAULT_STATE: AppState = {
   rawInput: SAMPLE_MARKDOWN,
   inputFormat: "auto",
   tableData: detectAndParse(SAMPLE_MARKDOWN),
-  themeId: "resend",
+  themeId: "vercel",
   background: {
     type: "none",
   },
-  windowStyle: "none",
+  windowStyle: "mac",
   fontSize: 18,
   showGrid: true,
   stripedRows: true,
