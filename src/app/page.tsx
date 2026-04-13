@@ -320,7 +320,6 @@ export default function Home() {
         className="shrink-0"
         style={{
           background: "var(--panel-bg)",
-          borderBottom: "1px solid var(--panel-border)",
         }}
       >
         {/* Navbar */}
@@ -505,6 +504,15 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <div style={{ height: "1px", background: "var(--border-subtle)", opacity: 0.5 }} />
+
+        <ControlPanel
+          state={state}
+          onChange={handleChange}
+          collapsed={isMobile ? controlsCollapsed : undefined}
+          onToggleCollapse={isMobile ? () => setControlsCollapsed((c) => !c) : undefined}
+        />
       </header>
 
       <main className="flex-1 min-h-0 overflow-hidden flex relative">
@@ -517,13 +525,6 @@ export default function Home() {
           onHeaderEdit={handleHeaderEdit}
         />
       </main>
-
-      <ControlPanel
-        state={state}
-        onChange={handleChange}
-        collapsed={isMobile ? controlsCollapsed : undefined}
-        onToggleCollapse={isMobile ? () => setControlsCollapsed((c) => !c) : undefined}
-      />
 
       <InputDrawer
         open={inputOpen}

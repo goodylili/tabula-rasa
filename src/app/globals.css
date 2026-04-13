@@ -123,20 +123,15 @@ body {
 .control-panel-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.control-panel-grid::-webkit-scrollbar {
-  height: 0;
 }
 
 .control-row {
   display: flex;
   align-items: flex-end;
-  gap: 16px;
-  flex-wrap: nowrap;
+  gap: 12px 18px;
+  flex-wrap: wrap;
+  padding: 8px 20px 12px;
 }
 
 /* Toggle bar hidden on desktop */

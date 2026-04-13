@@ -758,37 +758,34 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
   );
 
   return (
-    <div className="shrink-0 pb-4 px-2 sm:px-4">
-      <div
-        className="panel-glow control-panel-grid px-3 sm:px-5 py-3.5 rounded-2xl mx-auto"
-        style={{
-          background: "var(--panel-bg)",
-          border: "1px solid var(--panel-border)",
-          boxShadow: "none",
-        }}
-      >
-        {/* Mobile toggle bar */}
-        {onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            className="control-panel-toggle flex items-center justify-between w-full text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            <span>Controls</span>
-            <ChevronDown
-              size={14}
-              style={{
-                transform: collapsed ? "rotate(0deg)" : "rotate(180deg)",
-                transition: "transform 0.2s",
-              }}
-            />
-          </button>
-        )}
+    <div
+      className="shrink-0 control-panel-grid"
+      style={{
+        background: "var(--panel-bg)",
+        borderBottom: "1px solid var(--panel-border)",
+      }}
+    >
+      {/* Mobile toggle bar */}
+      {onToggleCollapse && (
+        <button
+          onClick={onToggleCollapse}
+          className="control-panel-toggle flex items-center justify-between w-full text-xs font-medium px-5"
+          style={{ color: "var(--text-secondary)", height: "36px" }}
+        >
+          <span>Controls</span>
+          <ChevronDown
+            size={14}
+            style={{
+              transform: collapsed ? "rotate(0deg)" : "rotate(180deg)",
+              transition: "transform 0.2s",
+            }}
+          />
+        </button>
+      )}
 
-        {/* Panel content — hidden when collapsed on mobile */}
-        <div className={collapsed ? "control-panel-content collapsed" : "control-panel-content"}>
-          {panelContent}
-        </div>
+      {/* Panel content — hidden when collapsed on mobile */}
+      <div className={collapsed ? "control-panel-content collapsed" : "control-panel-content"}>
+        {panelContent}
       </div>
     </div>
   );
