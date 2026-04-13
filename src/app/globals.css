@@ -119,14 +119,18 @@ body {
   background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
 }
 
+/* Shared card width for header and control panel */
+.app-card {
+  width: 100%;
+  max-width: 1200px;
+}
+
 /* Control panel layout */
 .control-panel-grid {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: fit-content;
-  max-width: 95%;
-  min-width: min(900px, 100%);
+  width: 100%;
 }
 
 .control-row {
