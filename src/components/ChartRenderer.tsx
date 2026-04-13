@@ -232,7 +232,7 @@ function BarChart({
         })}
 
         {/* Legend */}
-        {showLegend && datasets.length > 1 && (
+        {showLegend && (
           <g transform={`translate(${marginLeft}, ${chartH + 6})`}>
             {datasets.map((ds, i) => {
               const prevW = datasets.slice(0, i).reduce((acc, d) => acc + d.name.length * 7 + 36, 0);
@@ -352,7 +352,7 @@ function BarChart({
       })}
 
       {/* Legend */}
-      {showLegend && datasets.length > 1 && (
+      {showLegend && (
         <g transform={`translate(${marginLeft}, ${chartH + 8})`}>
           {datasets.map((ds, i) => {
             const prevW = datasets.slice(0, i).reduce((acc, d) => acc + d.name.length * 7 + 36, 0);
@@ -536,7 +536,7 @@ function LineChart({
       })}
 
       {/* Legend */}
-      {showLegend && datasets.length > 1 && (
+      {showLegend && (
         <g transform={`translate(${marginLeft}, ${chartH + 8})`}>
           {datasets.map((ds, i) => {
             const prevW = datasets.slice(0, i).reduce((acc, d) => acc + d.name.length * 7 + 36, 0);
