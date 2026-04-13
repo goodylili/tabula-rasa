@@ -130,9 +130,19 @@ body {
 
 .control-row {
   display: flex;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: stretch;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+.control-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Toggle bar hidden on desktop */
