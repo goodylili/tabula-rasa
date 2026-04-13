@@ -126,12 +126,29 @@ body {
   width: 100%;
 }
 
+.control-panel-rows {
+  display: flex;
+  flex-direction: column;
+}
+
 .control-row {
   display: flex;
   align-items: flex-end;
-  gap: 12px 18px;
-  flex-wrap: wrap;
-  padding: 8px 20px 12px;
+  gap: 14px;
+  padding: 6px 20px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.control-row::-webkit-scrollbar {
+  display: none;
+}
+.control-row:first-child {
+  padding-top: 8px;
+}
+.control-row:last-child {
+  padding-bottom: 10px;
 }
 
 /* Toggle bar hidden on desktop */
@@ -203,21 +220,12 @@ body {
   display: none;
 }
 
-/* Control panel: horizontal scroll per row on mobile */
+/* Control panel: tighter spacing on mobile */
 @media (max-width: 768px) {
   .control-row {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-    scrollbar-width: thin;
-  }
-  .control-row::-webkit-scrollbar {
-    height: 3px;
-  }
-  .control-row::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 2px;
+    gap: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
 

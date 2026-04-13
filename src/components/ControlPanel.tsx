@@ -550,210 +550,210 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
     : [];
 
   const panelContent = (
-    <div className="control-row">
-      <ControlGroup label="Theme">
-        <Dropdown value={state.themeId} options={themeOptions} onChange={(id) => onChange({ themeId: id })} />
-      </ControlGroup>
-      <ControlGroup label="Background">
-        <div className="flex items-center gap-1.5">
-          <Dropdown value={currentBgLabel} options={bgOptions}
-            onChange={(label) => { const p = presetBackgrounds.find((x) => x.label === label); if (p) setBackground(p.bg); }} />
-          <button onClick={() => colorRef.current?.click()} className="w-6 h-6 rounded shrink-0"
-            style={{ background: state.background.color ?? state.background.gradient ?? "#1a1a2e", border: "1.5px solid var(--border-strong)" }} title="Custom color" />
-          <input ref={colorRef} type="color" defaultValue={state.background.color ?? "#1a1a2e"}
-            onChange={(e) => setBackground({ type: "solid", color: e.target.value })} className="sr-only" />
-          <button onClick={() => bgImageRef.current?.click()} className="w-6 h-6 rounded shrink-0 flex items-center justify-center"
-            style={{ background: state.background.type === "image" ? "var(--accent)" : "var(--surface)", border: "1px solid var(--border-strong)",
-              color: state.background.type === "image" ? "var(--accent-text)" : "var(--text-muted)" }} title="Upload image">
-            <Upload size={10} />
-          </button>
-          <input ref={bgImageRef} type="file" accept="image/*" onChange={handleBgImageUpload} className="sr-only" />
-        </div>
-      </ControlGroup>
-      <ControlGroup label="Colors">
-        <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
-      </ControlGroup>
+    <div className="control-panel-rows">
+      {/* Row 1: Appearance — the most-used controls */}
+      <div className="control-row">
+        <ControlGroup label="Theme">
+          <Dropdown value={state.themeId} options={themeOptions} onChange={(id) => onChange({ themeId: id })} />
+        </ControlGroup>
+        <ControlGroup label="Background">
+          <div className="flex items-center gap-1.5">
+            <Dropdown value={currentBgLabel} options={bgOptions}
+              onChange={(label) => { const p = presetBackgrounds.find((x) => x.label === label); if (p) setBackground(p.bg); }} />
+            <button onClick={() => colorRef.current?.click()} className="w-6 h-6 rounded shrink-0"
+              style={{ background: state.background.color ?? state.background.gradient ?? "#1a1a2e", border: "1.5px solid var(--border-strong)" }} title="Custom color" />
+            <input ref={colorRef} type="color" defaultValue={state.background.color ?? "#1a1a2e"}
+              onChange={(e) => setBackground({ type: "solid", color: e.target.value })} className="sr-only" />
+            <button onClick={() => bgImageRef.current?.click()} className="w-6 h-6 rounded shrink-0 flex items-center justify-center"
+              style={{ background: state.background.type === "image" ? "var(--accent)" : "var(--surface)", border: "1px solid var(--border-strong)",
+                color: state.background.type === "image" ? "var(--accent-text)" : "var(--text-muted)" }} title="Upload image">
+              <Upload size={10} />
+            </button>
+            <input ref={bgImageRef} type="file" accept="image/*" onChange={handleBgImageUpload} className="sr-only" />
+          </div>
+        </ControlGroup>
+        <ControlGroup label="Colors">
+          <ColorPopover state={state} onChange={onChange} theme={currentTheme} />
+        </ControlGroup>
+        <Divider />
+        <ControlGroup label="Font">
+          <Dropdown value={state.fontFamily} options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
+            onChange={(id) => onChange({ fontFamily: id })} />
+        </ControlGroup>
+        <ControlGroup label="Size">
+          <SegmentToggle values={["12", "14", "16", "18"]} active={String(state.fontSize)}
+            onChange={(v) => onChange({ fontSize: Number(v) })} />
+        </ControlGroup>
+        <ControlGroup label="Title">
+          <input type="text" value={state.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Untitled"
+            className="rounded-md text-xs font-medium focus:outline-none focus:ring-1"
+            style={{ height: "28px", background: "var(--surface)", color: "var(--text-primary)",
+              border: "1px solid var(--border-subtle)", padding: "0 10px", width: "110px" }} />
+        </ControlGroup>
+      </div>
 
-      <Divider />
+      {/* Row 2: Layout + mode-specific */}
+      <div className="control-row">
+        <ControlGroup label="Window">
+          <SegmentToggle values={["mac", "windows", "none"]} labels={["macOS", "Win", "None"]}
+            active={state.windowStyle} onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })} />
+        </ControlGroup>
+        <ControlGroup label="Padding">
+          <SegmentToggle values={["0", "16", "32", "48", "64", "128"]} active={String(state.padding)}
+            onChange={(v) => onChange({ padding: Number(v) })} />
+        </ControlGroup>
+        <ControlGroup label="BG Radius">
+          <div className="flex items-center gap-1.5">
+            <input type="range" min="0" max="32" step="1" value={state.borderRadius}
+              onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
+              style={{ width: "52px", accentColor: "var(--accent)" }} />
+            <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "16px" }}>{state.borderRadius}</span>
+          </div>
+        </ControlGroup>
+        <ControlGroup label="Viz Radius">
+          <div className="flex items-center gap-1.5">
+            <input type="range" min="0" max="32" step="1" value={state.vizBorderRadius}
+              onChange={(e) => onChange({ vizBorderRadius: Number(e.target.value) })}
+              style={{ width: "52px", accentColor: "var(--accent)" }} />
+            <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "16px" }}>{state.vizBorderRadius}</span>
+          </div>
+        </ControlGroup>
 
-      <ControlGroup label="Font">
-        <Dropdown value={state.fontFamily} options={FONT_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
-          onChange={(id) => onChange({ fontFamily: id })} />
-      </ControlGroup>
-      <ControlGroup label="Size">
-        <SegmentToggle values={["12", "14", "16", "18"]} active={String(state.fontSize)}
-          onChange={(v) => onChange({ fontSize: Number(v) })} />
-      </ControlGroup>
-      <ControlGroup label="Window">
-        <SegmentToggle values={["mac", "windows", "none"]} labels={["macOS", "Win", "None"]}
-          active={state.windowStyle} onChange={(v) => onChange({ windowStyle: v as AppState["windowStyle"] })} />
-      </ControlGroup>
-      <ControlGroup label="Padding">
-        <SegmentToggle values={["0", "16", "32", "48", "64", "128"]} active={String(state.padding)}
-          onChange={(v) => onChange({ padding: Number(v) })} />
-      </ControlGroup>
-      <ControlGroup label="Title">
-        <input type="text" value={state.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Untitled"
-          className="rounded-lg text-xs font-medium placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
-          style={{ height: "28px", background: "var(--surface)", color: "var(--text-primary)",
-            border: "1px solid var(--border-subtle)", padding: "0 10px", width: "100px" }} />
-      </ControlGroup>
+        <Divider />
 
-      <Divider />
-
-      <ControlGroup label="BG Radius">
-        <div className="flex items-center gap-1.5">
-          <input type="range" min="0" max="32" step="1" value={state.borderRadius}
-            onChange={(e) => onChange({ borderRadius: Number(e.target.value) })}
-            style={{ width: "52px", accentColor: "var(--accent)" }} />
-          <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "16px" }}>{state.borderRadius}</span>
-        </div>
-      </ControlGroup>
-      <ControlGroup label="Viz Radius">
-        <div className="flex items-center gap-1.5">
-          <input type="range" min="0" max="32" step="1" value={state.vizBorderRadius}
-            onChange={(e) => onChange({ vizBorderRadius: Number(e.target.value) })}
-            style={{ width: "52px", accentColor: "var(--accent)" }} />
-          <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "16px" }}>{state.vizBorderRadius}</span>
-        </div>
-      </ControlGroup>
-
-      <Divider />
-
-      {state.vizMode === "table" ? (
-        <>
-          <ControlGroup label="Grid">
-            <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
-          </ControlGroup>
-          <ControlGroup label="Striped">
-            <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
-          </ControlGroup>
-          <ControlGroup label="Header">
-            <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
-          </ControlGroup>
-          <ControlGroup label="1st Col">
-            <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
-          </ControlGroup>
-          <ControlGroup label="Row #">
-            <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
-          </ControlGroup>
-        </>
-      ) : (
-        <>
-          <ControlGroup label="Labels">
-            <Dropdown value={String(state.chartConfig.labelColumn)} options={columnOptions}
-              onChange={(id) => updateChartConfig({ labelColumn: Number(id) })} />
-          </ControlGroup>
-          <ControlGroup label="Values">
-            <div className="flex items-center gap-1 flex-wrap shrink-0">
-              {columnOptions.map((col) => {
-                const idx = Number(col.id);
-                const isSelected = state.chartConfig.valueColumns.includes(idx);
-                return (
-                  <button key={col.id}
-                    onClick={() => { const cols = isSelected ? state.chartConfig.valueColumns.filter((c) => c !== idx) : [...state.chartConfig.valueColumns, idx]; if (cols.length > 0) updateChartConfig({ valueColumns: cols }); }}
-                    className="px-2 py-0.5 rounded text-[10px] font-medium transition-all"
-                    style={{ background: isSelected ? "var(--accent)" : "var(--surface)", color: isSelected ? "white" : "var(--text-muted)",
-                      border: `1px solid ${isSelected ? "var(--accent)" : "var(--border-subtle)"}` }}
-                    title={numericColumns.includes(idx) ? "Numeric column" : "Non-numeric column"}>
-                    {col.label.length > 10 ? col.label.slice(0, 9) + "\u2026" : col.label}
-                  </button>
-                );
-              })}
-            </div>
-          </ControlGroup>
-          <ControlGroup label="Legend">
-            <Toggle on={state.chartConfig.showLegend} onToggle={() => updateChartConfig({ showLegend: !state.chartConfig.showLegend })} />
-          </ControlGroup>
-          <ControlGroup label="Vals">
-            <Toggle on={state.chartConfig.showValues} onToggle={() => updateChartConfig({ showValues: !state.chartConfig.showValues })} />
-          </ControlGroup>
-
-          <Divider />
-
-          {state.vizMode === "bar" && (
-            <>
-              <ControlGroup label="Direction">
-                <SegmentToggle values={["vertical", "horizontal"]} labels={["Vert", "Horiz"]}
-                  active={state.chartConfig.bar.orientation}
-                  onChange={(v) => updateChartConfig({ bar: { ...state.chartConfig.bar, orientation: v as BarChartConfig["orientation"] } })} />
-              </ControlGroup>
-              <ControlGroup label="Style">
-                <SegmentToggle values={["grouped", "stacked"]} labels={["Group", "Stack"]}
-                  active={state.chartConfig.bar.barStyle}
-                  onChange={(v) => updateChartConfig({ bar: { ...state.chartConfig.bar, barStyle: v as BarChartConfig["barStyle"] } })} />
-              </ControlGroup>
-              <ControlGroup label="Radius">
-                <div className="flex items-center gap-1.5">
-                  <input type="range" min="0" max="12" step="1" value={state.chartConfig.bar.barRadius}
-                    onChange={(e) => updateChartConfig({ bar: { ...state.chartConfig.bar, barRadius: Number(e.target.value) } })}
-                    style={{ width: "48px", accentColor: "var(--accent)" }} />
-                  <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "14px" }}>{state.chartConfig.bar.barRadius}</span>
-                </div>
-              </ControlGroup>
-              <ControlGroup label="Gap">
-                <div className="flex items-center gap-1.5">
-                  <input type="range" min="0" max="16" step="1" value={state.chartConfig.bar.barGap}
-                    onChange={(e) => updateChartConfig({ bar: { ...state.chartConfig.bar, barGap: Number(e.target.value) } })}
-                    style={{ width: "48px", accentColor: "var(--accent)" }} />
-                  <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "14px" }}>{state.chartConfig.bar.barGap}</span>
-                </div>
-              </ControlGroup>
-            </>
-          )}
-          {state.vizMode === "line" && (
-            <>
-              <ControlGroup label="Curve">
-                <SegmentToggle values={["linear", "smooth"]} labels={["Straight", "Smooth"]}
-                  active={state.chartConfig.line.curveType}
-                  onChange={(v) => updateChartConfig({ line: { ...state.chartConfig.line, curveType: v as LineChartConfig["curveType"] } })} />
-              </ControlGroup>
-              <ControlGroup label="Area">
-                <Toggle on={state.chartConfig.line.showArea}
-                  onToggle={() => updateChartConfig({ line: { ...state.chartConfig.line, showArea: !state.chartConfig.line.showArea } })} />
-              </ControlGroup>
-              <ControlGroup label="Dots">
-                <Toggle on={state.chartConfig.line.showDots}
-                  onToggle={() => updateChartConfig({ line: { ...state.chartConfig.line, showDots: !state.chartConfig.line.showDots } })} />
-              </ControlGroup>
-              <ControlGroup label="Width">
-                <div className="flex items-center gap-1.5">
-                  <input type="range" min="1" max="5" step="0.5" value={state.chartConfig.line.lineWidth}
-                    onChange={(e) => updateChartConfig({ line: { ...state.chartConfig.line, lineWidth: Number(e.target.value) } })}
-                    style={{ width: "48px", accentColor: "var(--accent)" }} />
-                  <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "14px" }}>{state.chartConfig.line.lineWidth}</span>
-                </div>
-              </ControlGroup>
-            </>
-          )}
-          {state.vizMode === "pie" && (
-            <>
-              <ControlGroup label="Style">
-                <SegmentToggle values={["0", "50", "80"]} labels={["Pie", "Donut", "Thin"]}
-                  active={String(state.chartConfig.pie.innerRadius)}
-                  onChange={(v) => updateChartConfig({ pie: { ...state.chartConfig.pie, innerRadius: Number(v) } })} />
-              </ControlGroup>
-              <ControlGroup label="Labels">
-                <SegmentToggle values={["outside", "inside", "none"]} labels={["Out", "In", "Off"]}
-                  active={state.chartConfig.pie.labelPosition}
-                  onChange={(v) => updateChartConfig({ pie: { ...state.chartConfig.pie, labelPosition: v as PieChartConfig["labelPosition"] } })} />
-              </ControlGroup>
-              <ControlGroup label="Sort">
-                <Toggle on={state.chartConfig.pie.sortSlices}
-                  onToggle={() => updateChartConfig({ pie: { ...state.chartConfig.pie, sortSlices: !state.chartConfig.pie.sortSlices } })} />
-              </ControlGroup>
-              <ControlGroup label="Rotate">
-                <div className="flex items-center gap-1.5">
-                  <input type="range" min="0" max="360" step="15" value={state.chartConfig.pie.startAngle}
-                    onChange={(e) => updateChartConfig({ pie: { ...state.chartConfig.pie, startAngle: Number(e.target.value) } })}
-                    style={{ width: "48px", accentColor: "var(--accent)" }} />
-                  <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "20px" }}>{state.chartConfig.pie.startAngle}&deg;</span>
-                </div>
-              </ControlGroup>
-            </>
-          )}
-        </>
-      )}
+        {state.vizMode === "table" ? (
+          <>
+            <ControlGroup label="Grid">
+              <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
+            </ControlGroup>
+            <ControlGroup label="Striped">
+              <Toggle on={state.stripedRows} onToggle={() => onChange({ stripedRows: !state.stripedRows })} />
+            </ControlGroup>
+            <ControlGroup label="Header">
+              <Toggle on={state.highlightFirstRow} onToggle={() => onChange({ highlightFirstRow: !state.highlightFirstRow })} />
+            </ControlGroup>
+            <ControlGroup label="1st Col">
+              <Toggle on={state.highlightFirstCol} onToggle={() => onChange({ highlightFirstCol: !state.highlightFirstCol })} />
+            </ControlGroup>
+            <ControlGroup label="Row #">
+              <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
+            </ControlGroup>
+          </>
+        ) : (
+          <>
+            <ControlGroup label="Labels">
+              <Dropdown value={String(state.chartConfig.labelColumn)} options={columnOptions}
+                onChange={(id) => updateChartConfig({ labelColumn: Number(id) })} />
+            </ControlGroup>
+            <ControlGroup label="Values">
+              <div className="flex items-center gap-1 flex-wrap shrink-0">
+                {columnOptions.map((col) => {
+                  const idx = Number(col.id);
+                  const isSelected = state.chartConfig.valueColumns.includes(idx);
+                  return (
+                    <button key={col.id}
+                      onClick={() => { const cols = isSelected ? state.chartConfig.valueColumns.filter((c) => c !== idx) : [...state.chartConfig.valueColumns, idx]; if (cols.length > 0) updateChartConfig({ valueColumns: cols }); }}
+                      className="px-2 py-0.5 rounded text-[10px] font-medium transition-all"
+                      style={{ background: isSelected ? "var(--accent)" : "var(--surface)", color: isSelected ? "white" : "var(--text-muted)",
+                        border: `1px solid ${isSelected ? "var(--accent)" : "var(--border-subtle)"}` }}
+                      title={numericColumns.includes(idx) ? "Numeric column" : "Non-numeric column"}>
+                      {col.label.length > 10 ? col.label.slice(0, 9) + "\u2026" : col.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </ControlGroup>
+            <ControlGroup label="Legend">
+              <Toggle on={state.chartConfig.showLegend} onToggle={() => updateChartConfig({ showLegend: !state.chartConfig.showLegend })} />
+            </ControlGroup>
+            <ControlGroup label="Vals">
+              <Toggle on={state.chartConfig.showValues} onToggle={() => updateChartConfig({ showValues: !state.chartConfig.showValues })} />
+            </ControlGroup>
+            <Divider />
+            {state.vizMode === "bar" && (
+              <>
+                <ControlGroup label="Direction">
+                  <SegmentToggle values={["vertical", "horizontal"]} labels={["Vert", "Horiz"]}
+                    active={state.chartConfig.bar.orientation}
+                    onChange={(v) => updateChartConfig({ bar: { ...state.chartConfig.bar, orientation: v as BarChartConfig["orientation"] } })} />
+                </ControlGroup>
+                <ControlGroup label="Style">
+                  <SegmentToggle values={["grouped", "stacked"]} labels={["Group", "Stack"]}
+                    active={state.chartConfig.bar.barStyle}
+                    onChange={(v) => updateChartConfig({ bar: { ...state.chartConfig.bar, barStyle: v as BarChartConfig["barStyle"] } })} />
+                </ControlGroup>
+                <ControlGroup label="Radius">
+                  <div className="flex items-center gap-1.5">
+                    <input type="range" min="0" max="12" step="1" value={state.chartConfig.bar.barRadius}
+                      onChange={(e) => updateChartConfig({ bar: { ...state.chartConfig.bar, barRadius: Number(e.target.value) } })}
+                      style={{ width: "48px", accentColor: "var(--accent)" }} />
+                    <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "14px" }}>{state.chartConfig.bar.barRadius}</span>
+                  </div>
+                </ControlGroup>
+                <ControlGroup label="Gap">
+                  <div className="flex items-center gap-1.5">
+                    <input type="range" min="0" max="16" step="1" value={state.chartConfig.bar.barGap}
+                      onChange={(e) => updateChartConfig({ bar: { ...state.chartConfig.bar, barGap: Number(e.target.value) } })}
+                      style={{ width: "48px", accentColor: "var(--accent)" }} />
+                    <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "14px" }}>{state.chartConfig.bar.barGap}</span>
+                  </div>
+                </ControlGroup>
+              </>
+            )}
+            {state.vizMode === "line" && (
+              <>
+                <ControlGroup label="Curve">
+                  <SegmentToggle values={["linear", "smooth"]} labels={["Straight", "Smooth"]}
+                    active={state.chartConfig.line.curveType}
+                    onChange={(v) => updateChartConfig({ line: { ...state.chartConfig.line, curveType: v as LineChartConfig["curveType"] } })} />
+                </ControlGroup>
+                <ControlGroup label="Area">
+                  <Toggle on={state.chartConfig.line.showArea}
+                    onToggle={() => updateChartConfig({ line: { ...state.chartConfig.line, showArea: !state.chartConfig.line.showArea } })} />
+                </ControlGroup>
+                <ControlGroup label="Dots">
+                  <Toggle on={state.chartConfig.line.showDots}
+                    onToggle={() => updateChartConfig({ line: { ...state.chartConfig.line, showDots: !state.chartConfig.line.showDots } })} />
+                </ControlGroup>
+                <ControlGroup label="Width">
+                  <div className="flex items-center gap-1.5">
+                    <input type="range" min="1" max="5" step="0.5" value={state.chartConfig.line.lineWidth}
+                      onChange={(e) => updateChartConfig({ line: { ...state.chartConfig.line, lineWidth: Number(e.target.value) } })}
+                      style={{ width: "48px", accentColor: "var(--accent)" }} />
+                    <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "14px" }}>{state.chartConfig.line.lineWidth}</span>
+                  </div>
+                </ControlGroup>
+              </>
+            )}
+            {state.vizMode === "pie" && (
+              <>
+                <ControlGroup label="Style">
+                  <SegmentToggle values={["0", "50", "80"]} labels={["Pie", "Donut", "Thin"]}
+                    active={String(state.chartConfig.pie.innerRadius)}
+                    onChange={(v) => updateChartConfig({ pie: { ...state.chartConfig.pie, innerRadius: Number(v) } })} />
+                </ControlGroup>
+                <ControlGroup label="Labels">
+                  <SegmentToggle values={["outside", "inside", "none"]} labels={["Out", "In", "Off"]}
+                    active={state.chartConfig.pie.labelPosition}
+                    onChange={(v) => updateChartConfig({ pie: { ...state.chartConfig.pie, labelPosition: v as PieChartConfig["labelPosition"] } })} />
+                </ControlGroup>
+                <ControlGroup label="Sort">
+                  <Toggle on={state.chartConfig.pie.sortSlices}
+                    onToggle={() => updateChartConfig({ pie: { ...state.chartConfig.pie, sortSlices: !state.chartConfig.pie.sortSlices } })} />
+                </ControlGroup>
+                <ControlGroup label="Rotate">
+                  <div className="flex items-center gap-1.5">
+                    <input type="range" min="0" max="360" step="15" value={state.chartConfig.pie.startAngle}
+                      onChange={(e) => updateChartConfig({ pie: { ...state.chartConfig.pie, startAngle: Number(e.target.value) } })}
+                      style={{ width: "48px", accentColor: "var(--accent)" }} />
+                    <span className="text-[10px] font-medium tabular-nums" style={{ color: "var(--text-muted)", width: "20px" }}>{state.chartConfig.pie.startAngle}&deg;</span>
+                  </div>
+                </ControlGroup>
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 
