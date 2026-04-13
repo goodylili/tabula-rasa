@@ -4,35 +4,36 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { AppState } from "@/lib/types";
-import { detectAndParse, SAMPLE_MARKDOWN } from "@/lib/parser";
+import { detectAndParse, SAMPLE_MARKDOWN, SAMPLE_CHART_MARKDOWN } from "@/lib/parser";
 import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
 import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import InputDrawer from "@/components/InputDrawer";
-import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database } from "lucide-react";
+import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database, Sun, Moon, Table, BarChart3, LineChart, PieChart } from "lucide-react";
+import { VisualizationMode } from "@/lib/types";
 
-const STORAGE_KEY = "tabula-rasa-state";
+const STORAGE_KEY = "pastepretty-state";
 
 const DEFAULT_STATE: AppState = {
   rawInput: SAMPLE_MARKDOWN,
   inputFormat: "auto",
   tableData: detectAndParse(SAMPLE_MARKDOWN),
-  themeId: "candy",
+  themeId: "vercel",
   background: {
-    type: "gradient",
-    gradient: "linear-gradient(140deg, #A58EFB, #E9BFF8)",
+    type: "none",
   },
   windowStyle: "mac",
-  fontSize: 14,
+  fontSize: 18,
   showGrid: true,
   stripedRows: true,
-  highlightFirstRow: false,
-  highlightFirstCol: false,
-  showRowNumbers: false,
-  borderRadius: 12,
-  padding: 48,
-  fontFamily: "",
+  highlightFirstRow: true,
+  highlightFirstCol: true,
+  showRowNumbers: true,
+  borderRadius: 32,
+  vizBorderRadius: 12,
+  padding: 64,
+  fontFamily: "'Noto Sans Mono', monospace",
   customHeaderBg: "",
   customHeaderText: "",
   customRowBg: "",
@@ -40,6 +41,32 @@ const DEFAULT_STATE: AppState = {
   customRowText: "",
   customBorderColor: "",
   title: "",
+  vizMode: "table",
+  chartConfig: {
+    labelColumn: 0,
+    valueColumns: [1],
+    showLegend: true,
+    showValues: true,
+    bar: {
+      orientation: "vertical",
+      barStyle: "grouped",
+      barRadius: 3,
+      barGap: 2,
+    },
+    line: {
+      curveType: "smooth",
+      showArea: true,
+      showDots: true,
+      lineWidth: 2.5,
+    },
+    pie: {
+      innerRadius: 50,
+      labelPosition: "outside",
+      sortSlices: false,
+      startAngle: 0,
+    },
+    customColors: {},
+  },
 };
 
 function loadState(): AppState {
@@ -50,6 +77,16 @@ function loadState(): AppState {
       const parsed = JSON.parse(saved);
       // Re-parse table data from raw input
       parsed.tableData = detectAndParse(parsed.rawInput, parsed.inputFormat === "auto" ? undefined : parsed.inputFormat);
+      // Deep-merge chartConfig so new sub-configs (bar/line/pie) get defaults
+      if (parsed.chartConfig) {
+        parsed.chartConfig = {
+          ...DEFAULT_STATE.chartConfig,
+          ...parsed.chartConfig,
+          bar: { ...DEFAULT_STATE.chartConfig.bar, ...parsed.chartConfig.bar },
+          line: { ...DEFAULT_STATE.chartConfig.line, ...parsed.chartConfig.line },
+          pie: { ...DEFAULT_STATE.chartConfig.pie, ...parsed.chartConfig.pie },
+        };
+      }
       return { ...DEFAULT_STATE, ...parsed };
     }
   } catch {}
@@ -72,6 +109,9 @@ export default function Home() {
   const [exporting, setExporting] = useState(false);
   const [inputOpen, setInputOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [colorMode, setColorMode] = useState<"dark" | "light">("dark");
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
@@ -80,6 +120,33 @@ export default function Home() {
   useEffect(() => {
     setState(loadState());
     setHydrated(true);
+  }, []);
+
+  // Track mobile breakpoint
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  // Load color mode preference
+  useEffect(() => {
+    const saved = localStorage.getItem("pastepretty-color-mode");
+    if (saved === "light" || saved === "dark") {
+      setColorMode(saved);
+      document.documentElement.setAttribute("data-theme", saved);
+    }
+  }, []);
+
+  const toggleColorMode = useCallback(() => {
+    setColorMode((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("pastepretty-color-mode", next);
+      return next;
+    });
   }, []);
 
   // Auto-save to localStorage every second
@@ -109,11 +176,48 @@ export default function Home() {
         next.customAltRowBg = "";
         next.customRowText = "";
         next.customBorderColor = "";
+        next.chartConfig = { ...next.chartConfig, customColors: {} };
       }
 
       if ("rawInput" in patch || "inputFormat" in patch) {
         next.tableData = detectAndParse(next.rawInput, next.inputFormat === "auto" ? undefined : next.inputFormat);
       }
+
+      // When switching to a chart mode, check if data has numeric columns
+      if ("vizMode" in patch && patch.vizMode !== "table" && prev.vizMode === "table") {
+        const td = next.tableData;
+        if (td) {
+          const hasNumeric = td.headers.some((_, ci) =>
+            td.rows.some((row) => {
+              const cleaned = (row[ci] || "").replace(/[,$%]/g, "").trim();
+              return cleaned !== "" && !isNaN(Number(cleaned));
+            })
+          );
+          if (!hasNumeric) {
+            // Swap to chart-friendly sample data
+            next.rawInput = SAMPLE_CHART_MARKDOWN;
+            next.tableData = detectAndParse(SAMPLE_CHART_MARKDOWN);
+            next.chartConfig = { ...next.chartConfig, labelColumn: 0, valueColumns: [1, 2, 3], showLegend: true, showValues: true };
+          } else {
+            // Auto-select: first non-numeric col as label, numeric cols as values
+            const numericCols = td.headers
+              .map((_, ci) => ci)
+              .filter((ci) =>
+                td.rows.some((row) => {
+                  const cleaned = (row[ci] || "").replace(/[,$%]/g, "").trim();
+                  return cleaned !== "" && !isNaN(Number(cleaned));
+                })
+              );
+            const labelCol = td.headers.findIndex((_, ci) => !numericCols.includes(ci));
+            next.chartConfig = {
+              ...next.chartConfig,
+              labelColumn: labelCol >= 0 ? labelCol : 0,
+              valueColumns: numericCols.length > 0 ? numericCols : [1],
+            };
+          }
+        }
+      }
+
       return next;
     });
   }, []);
@@ -133,7 +237,7 @@ export default function Home() {
         dataUrl = await toPng(canvasRef.current, opts);
       }
       const link = document.createElement("a");
-      link.download = `tabula-rasa-${state.themeId}.${imgFormat}`;
+      link.download = `pastepretty-${state.themeId}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -153,7 +257,7 @@ export default function Home() {
       if (!state.tableData) return;
       const content = exportData(state.tableData, format, state.title || "my_table");
       const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `tabula-rasa.${ext}`);
+      downloadText(content, `pastepretty.${ext}`);
     },
     [handleExportImage, state.tableData, state.title]
   );
@@ -210,143 +314,217 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "hsl(0, 0%, 5%)" }}>
-      {/* Top Nav Bar */}
-      <nav
-        className="flex items-center justify-between px-5 shrink-0"
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+      {/* Header */}
+      <header
+        className="shrink-0"
         style={{
-          height: "50px",
           background: "var(--panel-bg)",
           borderBottom: "1px solid var(--panel-border)",
         }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0"
-            style={{ background: "var(--accent)" }}
-          >
-            T
-          </div>
-          <span className="font-semibold text-sm tracking-tight text-white nav-brand-text">tabula-rasa</span>
-          <span className="text-xs ml-1 nav-brand-text" style={{ color: "rgba(255,255,255,0.35)" }}>
-            by Goodness
-          </span>
-        </div>
+        {/* Navbar */}
+        <div
+          className="flex items-center justify-between px-5"
+          style={{ height: "56px" }}
+        >
+          {/* Left: Brand + Viz tabs */}
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{
+                  background: "var(--accent)",
+                  boxShadow: "0 2px 8px rgba(110,86,207,0.25)",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
+                  <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+                  <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+                  <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
+                  <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
+                </svg>
+              </div>
+              <span className="font-semibold text-[13px] tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>
+                PastePretty
+              </span>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json,.csv,.md,.markdown,.sql,.txt"
-            onChange={handleImportFile}
-            className="sr-only"
-          />
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-          >
-            <Upload size={13} />
-            Import
-          </button>
+            <div className="w-px h-5 header-separator" style={{ background: "var(--border-subtle)" }} />
 
-          <button
-            onClick={() => setInputOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-          >
-            Edit Data
-          </button>
-
-          <div className="flex items-center">
-            <button
-              onClick={() => handleExport("png")}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
-              style={{ background: "var(--accent)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
-            >
-              <Download size={14} />
-              {exporting ? "Exporting..." : "Export"}
-            </button>
-            <button
-              ref={exportBtnRef}
-              onClick={() => setExportOpen(!exportOpen)}
-              disabled={exporting}
-              className="flex items-center py-1.5 px-2 rounded-r-lg text-white transition-all disabled:opacity-50"
-              style={{
-                background: "var(--accent)",
-                borderLeft: "1px solid rgba(255,255,255,0.2)",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
-            >
-              <ChevronDown size={12} style={{ opacity: 0.7 }} />
-            </button>
-
-            {exportOpen && createPortal(
-              <>
-                <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
-                <div
-                  className="rounded-xl overflow-hidden shadow-2xl"
+            {/* Viz mode tabs */}
+            <div className="flex items-center gap-0.5 viz-tabs">
+              {([
+                { mode: "table" as VisualizationMode, icon: <Table size={13} />, label: "Table" },
+                { mode: "bar" as VisualizationMode, icon: <BarChart3 size={13} />, label: "Bar" },
+                { mode: "line" as VisualizationMode, icon: <LineChart size={13} />, label: "Line" },
+                { mode: "pie" as VisualizationMode, icon: <PieChart size={13} />, label: "Pie" },
+              ]).map(({ mode, icon, label }) => (
+                <button
+                  key={mode}
+                  onClick={() => handleChange({ vizMode: mode })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
                   style={{
-                    position: "fixed",
-                    top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
-                    right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
-                    zIndex: 9999,
-                    background: "hsl(0,0%,12%)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    minWidth: "180px",
+                    background: state.vizMode === mode ? "var(--surface-active)" : "transparent",
+                    color: state.vizMode === mode ? "var(--foreground)" : "var(--text-muted)",
+                    boxShadow: state.vizMode === mode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (state.vizMode !== mode) e.currentTarget.style.background = "var(--surface)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (state.vizMode !== mode) e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  {EXPORT_FORMATS.map((fmt) => (
-                    <button
-                      key={fmt.id}
-                      onClick={() => handleExport(fmt.id)}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
-                      style={{ color: "rgba(255,255,255,0.8)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
-                      {fmt.label}
-                      <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px" }}>
-                        .{fmt.ext}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>,
-              document.body
-            )}
+                  {icon}
+                  <span className="nav-btn-label">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1.5 header-actions">
+            <button
+              onClick={toggleColorMode}
+              className="flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0"
+              style={{
+                background: "transparent",
+                color: "var(--text-muted)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {colorMode === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,.csv,.md,.markdown,.sql,.txt"
+              onChange={handleImportFile}
+              className="sr-only"
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: "transparent",
+                color: "var(--text-muted)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              title="Import file"
+            >
+              <Upload size={13} />
+              <span className="nav-btn-label">Import</span>
+            </button>
+
+            <button
+              onClick={() => setInputOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: "transparent",
+                color: "var(--text-muted)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              title="Edit table data"
+            >
+              <FileText size={13} />
+              <span className="nav-btn-label">Edit Data</span>
+            </button>
+
+            <div className="flex items-center ml-1">
+              <button
+                onClick={() => handleExport("png")}
+                disabled={exporting}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "var(--accent)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
+              >
+                <Download size={13} />
+                {exporting ? "..." : "Export"}
+              </button>
+              <button
+                ref={exportBtnRef}
+                onClick={() => setExportOpen(!exportOpen)}
+                disabled={exporting}
+                className="flex items-center py-1.5 px-1.5 rounded-r-lg text-white transition-all disabled:opacity-50"
+                style={{
+                  background: "var(--accent)",
+                  borderLeft: "1px solid rgba(255,255,255,0.2)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
+              >
+                <ChevronDown size={12} style={{ opacity: 0.7 }} />
+              </button>
+
+              {exportOpen && createPortal(
+                <>
+                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
+                  <div
+                    className="rounded-xl overflow-hidden"
+                    style={{
+                      position: "fixed",
+                      top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
+                      right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
+                      zIndex: 9999,
+                      background: "var(--elevated-bg)",
+                      border: "1px solid var(--border)",
+                      minWidth: "180px",
+                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+                      backdropFilter: "none",
+                      WebkitBackdropFilter: "none",
+                    }}
+                  >
+                    {EXPORT_FORMATS.map((fmt) => (
+                      <button
+                        key={fmt.id}
+                        onClick={() => handleExport(fmt.id)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
+                        style={{ color: "var(--text-primary)" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
+                        {fmt.label}
+                        <span className="ml-auto" style={{ color: "var(--text-subtle)", fontSize: "10px" }}>
+                          .{fmt.ext}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>,
+                document.body
+              )}
+            </div>
           </div>
         </div>
-      </nav>
 
-      <main className="flex-1 overflow-auto flex items-center justify-center relative">
+      </header>
+
+      <main className="flex-1 min-h-0 overflow-hidden flex relative">
         <PreviewCanvas
           ref={canvasRef}
           state={state}
           exporting={exporting}
+          colorMode={colorMode}
           onCellEdit={handleCellEdit}
           onHeaderEdit={handleHeaderEdit}
         />
       </main>
 
-      <ControlPanel state={state} onChange={handleChange} />
+      <ControlPanel
+        state={state}
+        onChange={handleChange}
+        collapsed={isMobile ? controlsCollapsed : undefined}
+        onToggleCollapse={isMobile ? () => setControlsCollapsed((c) => !c) : undefined}
+      />
 
       <InputDrawer
         open={inputOpen}

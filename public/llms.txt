@@ -1,0 +1,38 @@
+# PastePretty
+
+> Paste your data, get beautiful visualizations. Instantly.
+
+PastePretty transforms raw data — JSON, Markdown tables, CSV, PostgreSQL output — into polished, themed visualizations ready for sharing, documentation, or presentations.
+
+## What it does
+
+- Paste any tabular data and get a styled visualization in seconds
+- Supports tables, bar charts, line charts, pie charts, scatter plots, heatmaps, treemaps, funnel charts, area charts, stat cards, and comparison cards
+- 30+ built-in themes (Vercel, GitHub, Stripe, Linear, Supabase, Tailwind, and more)
+- Customizable colors, fonts, backgrounds, border radius, and window frames (macOS / Windows style)
+- Export as PNG, JPG, SVG, JSON, CSV, Markdown, or SQL
+- Upload custom background images
+- Light and dark mode support
+- Fully client-side — no data leaves your browser
+
+## Pages
+
+- [Home](https://pastepretty.com/): Tables + bar/line/pie charts
+- [Scatter](https://pastepretty.com/scatter): Scatter plots with grouping
+- [Heatmap](https://pastepretty.com/heatmap): Color-scaled heatmaps
+- [Treemap](https://pastepretty.com/treemap): Hierarchical treemaps
+- [Funnel](https://pastepretty.com/funnel): Funnel/conversion charts
+- [Area](https://pastepretty.com/area): Area charts
+- [Stat Card](https://pastepretty.com/stat-card): Metric/KPI stat cards
+- [Comparison](https://pastepretty.com/comparison): Side-by-side comparison cards
+
+## How to use
+
+1. Paste your data (JSON, Markdown table, CSV, or PostgreSQL output)
+2. Pick a theme and visualization type
+3. Customize colors, fonts, and layout
+4. Export as an image or data format
+
+## Tech
+
+Built with Next.js, React, TypeScript, and Tailwind CSS. All rendering happens client-side using SVG and html-to-image.

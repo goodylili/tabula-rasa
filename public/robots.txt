@@ -1,0 +1,5 @@
+# PastePretty - https://pastepretty.com
+User-agent: *
+Allow: /
+
+Sitemap: https://pastepretty.com/sitemap.xml
