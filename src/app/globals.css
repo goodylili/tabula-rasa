@@ -123,32 +123,16 @@ body {
 .control-panel-grid {
   display: flex;
   flex-direction: column;
-  width: 100%;
-}
-
-.control-panel-rows {
-  display: flex;
-  flex-direction: column;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .control-row {
   display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  padding: 6px 20px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.control-row::-webkit-scrollbar {
-  display: none;
-}
-.control-row:first-child {
-  padding-top: 8px;
-}
-.control-row:last-child {
-  padding-bottom: 10px;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 /* Toggle bar hidden on desktop */
@@ -220,12 +204,21 @@ body {
   display: none;
 }
 
-/* Control panel: tighter spacing on mobile */
+/* Control panel: horizontal scroll per row on mobile */
 @media (max-width: 768px) {
   .control-row {
-    gap: 10px;
-    padding-left: 12px;
-    padding-right: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .control-row::-webkit-scrollbar {
+    height: 3px;
+  }
+  .control-row::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 2px;
   }
 }
 
