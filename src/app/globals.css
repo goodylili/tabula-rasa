@@ -123,26 +123,20 @@ body {
 .control-panel-grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: fit-content;
-  max-width: 100%;
+  gap: 0;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.control-panel-grid::-webkit-scrollbar {
+  height: 0;
 }
 
 .control-row {
   display: flex;
-  align-items: stretch;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.control-section {
-  display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 16px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
+  flex-wrap: nowrap;
 }
 
 /* Toggle bar hidden on desktop */
