@@ -40,11 +40,13 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     }
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(1);
+    const [scaleInfo, setScaleInfo] = useState({ scale: 1, contentScrollHeight: 0 });
+    const scale = scaleInfo.scale;
+    const contentScrollHeight = scaleInfo.contentScrollHeight;
 
     const updateScale = useCallback(() => {
       if (exporting || !containerRef.current || !contentRef.current) {
-        setScale(1);
+        setScaleInfo({ scale: 1, contentScrollHeight: 0 });
         return;
       }
       const container = containerRef.current;
@@ -62,17 +64,18 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
       const contentW = content.scrollWidth;
       const contentH = content.scrollHeight;
 
-      if (contentW <= 0 || contentH <= 0) { setScale(1); return; }
+      if (contentW <= 0 || contentH <= 0) { setScaleInfo({ scale: 1, contentScrollHeight: contentH }); return; }
 
       const scaleX = availW / contentW;
       const scaleY = availH / contentH;
       const newScale = Math.min(1, scaleX, scaleY);
 
       // Don't scale below 0.3 — at that point just scroll
-      setScale(Math.max(0.3, newScale));
+      setScaleInfo({ scale: Math.max(0.3, newScale), contentScrollHeight: contentH });
     }, [exporting]);
 
     useEffect(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional layout measurement that must set state
       updateScale();
     }, [
       state.tableData, state.padding, state.fontSize, state.windowStyle,
@@ -113,8 +116,8 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
             transform: exporting ? undefined : `scale(${scale})`,
             transformOrigin: "top center",
             // Reserve the scaled height so the container doesn't collapse
-            ...(scale < 1 && !exporting && contentRef.current ? {
-              marginBottom: `${-(contentRef.current.scrollHeight * (1 - scale))}px`,
+            ...(scale < 1 && !exporting && contentScrollHeight > 0 ? {
+              marginBottom: `${-(contentScrollHeight * (1 - scale))}px`,
             } : {}),
           }}
         >

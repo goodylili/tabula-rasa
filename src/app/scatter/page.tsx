@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, TableTheme, Background } from "@/lib/types";
@@ -924,7 +925,7 @@ export default function ScatterPage() {
       >
         <div className="flex items-center justify-between px-3 sm:px-5" style={{ height: "52px" }}>
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(110,86,207,0.3)" }}
@@ -936,7 +937,7 @@ export default function ScatterPage() {
                 <circle cx="13" cy="12" r="1.5" fill="white" opacity="0.5" />
                 <circle cx="3" cy="13" r="1" fill="white" opacity="0.4" />
               </svg>
-            </a>
+            </Link>
             <div className="flex items-baseline gap-2">
               <span className="nav-brand-text font-bold text-sm tracking-tight" style={{ color: "var(--foreground)" }}>
                 PastePretty

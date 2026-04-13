@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, TableTheme, Background } from "@/lib/types";
@@ -655,6 +656,14 @@ function ColorCustomizerPopover({
   onChange: (patch: Partial<FunnelState>) => void;
   anchorRef: React.RefObject<HTMLButtonElement | null>;
 }) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (open && anchorRef.current) {
+      setRect(anchorRef.current.getBoundingClientRect());
+    }
+  }, [open, anchorRef]);
+
   if (!open) return null;
 
   const fields: { key: keyof FunnelState; label: string; themeDefault: string }[] = [
@@ -664,8 +673,6 @@ function ColorCustomizerPopover({
     { key: "customRowText", label: "Text", themeDefault: theme.rowText },
     { key: "customBorderColor", label: "Border", themeDefault: theme.borderColor },
   ];
-
-  const rect = anchorRef.current?.getBoundingClientRect();
 
   return createPortal(
     <>
@@ -946,7 +953,7 @@ export default function FunnelPage() {
         <div className="flex items-center justify-between px-3 sm:px-5" style={{ height: "52px" }}>
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(110,86,207,0.3)" }}
@@ -958,7 +965,7 @@ export default function FunnelPage() {
                 <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
                 <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
               </svg>
-            </a>
+            </Link>
             <div className="flex items-baseline gap-2">
               <span className="nav-brand-text font-bold text-sm tracking-tight" style={{ color: "var(--foreground)" }}>
                 PastePretty

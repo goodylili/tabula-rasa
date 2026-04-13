@@ -112,33 +112,33 @@ function Dropdown({
   }
 
   // Calculate portal position
-  const getMenuStyle = (): React.CSSProperties => {
-    if (!triggerRef.current) return {};
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const menuMaxH = 340;
 
     if (spaceAbove > spaceBelow) {
-      // Open upward
       const availH = Math.min(menuMaxH, spaceAbove - 16);
-      return {
+      setMenuStyle({
         position: "fixed",
         bottom: window.innerHeight - rect.top + 8,
         left: rect.left,
         maxHeight: `${availH}px`,
-      };
+      });
     } else {
-      // Open downward
       const availH = Math.min(menuMaxH, spaceBelow - 16);
-      return {
+      setMenuStyle({
         position: "fixed",
         top: rect.bottom + 8,
         left: rect.left,
         maxHeight: `${availH}px`,
-      };
+      });
     }
-  };
+  }, [open]);
 
   return (
     <div>
@@ -165,7 +165,7 @@ function Dropdown({
           <div
             className="rounded-xl overflow-hidden"
             style={{
-              ...getMenuStyle(),
+              ...menuStyle,
               zIndex: 9999,
               background: "var(--elevated-bg)",
               border: "1px solid var(--border)",
@@ -360,8 +360,10 @@ function ColorPopover({
     });
   };
 
-  const getPopoverStyle = (): React.CSSProperties => {
-    if (!triggerRef.current) return {};
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -369,11 +371,11 @@ function ColorPopover({
     const left = Math.min(rect.right - popoverW, Math.max(8, rect.left));
 
     if (spaceAbove > spaceBelow) {
-      return { position: "fixed", bottom: window.innerHeight - rect.top + 8, left, width: `${popoverW}px` };
+      setPopoverStyle({ position: "fixed", bottom: window.innerHeight - rect.top + 8, left, width: `${popoverW}px` });
     } else {
-      return { position: "fixed", top: rect.bottom + 8, left, width: `${popoverW}px` };
+      setPopoverStyle({ position: "fixed", top: rect.bottom + 8, left, width: `${popoverW}px` });
     }
-  };
+  }, [open]);
 
   const popoverTitle = isTable
     ? "Table Colors"
@@ -408,7 +410,7 @@ function ColorPopover({
           <div
             className="rounded-xl p-4"
             style={{
-              ...getPopoverStyle(),
+              ...popoverStyle,
               zIndex: 9999,
               background: "var(--elevated-bg)",
               border: "1px solid var(--border)",
@@ -487,7 +489,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
     };
     reader.readAsDataURL(file);
     e.target.value = "";
-  }, []);
+  }, [setBackground]);
 
   const themeOptions = themes.map((t) => ({
     id: t.id,

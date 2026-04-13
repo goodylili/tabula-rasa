@@ -188,7 +188,7 @@ function squarify(
     }
 
     // Find optimal strip
-    let strip = [remaining[0]];
+    const strip = [remaining[0]];
     let stripArea = remaining[0].area;
 
     const worstRatio = (s: typeof strip, side: number) => {
@@ -483,7 +483,7 @@ export default function TreemapPage() {
 
   // Build treemap rects
   let treemapRects: TreemapRect[] = [];
-  let groupHeaders: GroupHeaderRect[] = [];
+  const groupHeaders: GroupHeaderRect[] = [];
 
   if (hasGroups) {
     // Group items, then allocate space proportionally

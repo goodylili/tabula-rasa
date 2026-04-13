@@ -604,13 +604,13 @@ function PieChart({
 
   const startRad = (cfg.startAngle - 90) * (Math.PI / 180);
 
+  /* eslint-disable react-hooks/preserve-manual-memoization */
   const slices = useMemo(() => {
-    let angle = startRad;
     return values.map((val, i) => {
+      const priorSum = values.slice(0, i).reduce((s, v) => s + Math.abs(v), 0);
       const portion = Math.abs(val) / total;
-      const startAngle = angle;
-      const endAngle = angle + portion * 2 * Math.PI;
-      angle = endAngle;
+      const startAngle = startRad + (priorSum / total) * 2 * Math.PI;
+      const endAngle = startAngle + portion * 2 * Math.PI;
 
       // Offset each slice slightly away from center for gap effect
       const midAngle = startAngle + (endAngle - startAngle) / 2;
@@ -657,6 +657,7 @@ function PieChart({
       return { d, portion, outsideX, outsideY, insideX, insideY, val, label: labels[i], midAngle };
     });
   }, [values, labels, cx, cy, r, innerR, isDonut, total, startRad, sliceGap]);
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   return (
     <svg width={totalW} height={size} style={{ fontFamily }}>

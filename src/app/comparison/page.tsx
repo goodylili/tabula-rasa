@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, Background } from "@/lib/types";
@@ -227,25 +228,28 @@ function Dropdown({
     groups[groups.length - 1].items.push(opt);
   }
 
-  const getMenuStyle = (): React.CSSProperties => {
-    if (!triggerRef.current) return {};
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const menuMaxH = 340;
     if (spaceAbove > spaceBelow) {
-      return {
+      setMenuStyle({
         position: "fixed", bottom: window.innerHeight - rect.top + 6,
         left: rect.left, maxHeight: Math.min(menuMaxH, spaceAbove - 16),
         zIndex: 9999,
-      };
+      });
+    } else {
+      setMenuStyle({
+        position: "fixed", top: rect.bottom + 6,
+        left: rect.left, maxHeight: Math.min(menuMaxH, spaceBelow - 16),
+        zIndex: 9999,
+      });
     }
-    return {
-      position: "fixed", top: rect.bottom + 6,
-      left: rect.left, maxHeight: Math.min(menuMaxH, spaceBelow - 16),
-      zIndex: 9999,
-    };
-  };
+  }, [open]);
 
   return (
     <>
@@ -272,7 +276,7 @@ function Dropdown({
           <div
             className="rounded-xl overflow-auto"
             style={{
-              ...getMenuStyle(),
+              ...menuStyle,
               background: "var(--elevated-bg)", border: "1px solid var(--border)",
               minWidth: "160px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
             }}
@@ -992,7 +996,7 @@ export default function ComparisonPage() {
       <header className="shrink-0" style={{ background: "var(--panel-bg)", borderBottom: "1px solid var(--panel-border)" }}>
         <div className="flex items-center justify-between px-3 sm:px-5" style={{ height: "52px" }}>
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
+            <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(110,86,207,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1012,7 +1016,7 @@ export default function ComparisonPage() {
                   comparison
                 </span>
               </div>
-            </a>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2 header-actions">

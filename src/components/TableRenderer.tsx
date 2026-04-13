@@ -174,6 +174,7 @@ export default function TableRenderer({
 
   // Reset column widths when data changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when data shape changes
     setColWidths({});
   }, [data.headers.length]);
 
