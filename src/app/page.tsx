@@ -323,61 +323,82 @@ export default function Home() {
           borderBottom: "1px solid var(--panel-border)",
         }}
       >
-        {/* Top row: Brand + Actions */}
+        {/* Navbar */}
         <div
           className="flex items-center justify-between px-5"
-          style={{ height: "52px" }}
+          style={{ height: "56px" }}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{
-                background: "var(--accent)",
-                boxShadow: "0 2px 8px rgba(110,86,207,0.3)",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
-                <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
-                <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
-                <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
-                <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
-              </svg>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-sm tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>
-                PastePretty
-              </span>
-              <span
-                className="text-[10px] font-medium px-1.5 py-0.5 rounded-md nav-brand-text"
+          {/* Left: Brand + Viz tabs */}
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
                 style={{
-                  color: "var(--text-muted)",
-                  background: "var(--surface)",
+                  background: "var(--accent)",
+                  boxShadow: "0 2px 8px rgba(110,86,207,0.25)",
                 }}
               >
-                by Goodness
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
+                  <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+                  <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+                  <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
+                  <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
+                </svg>
+              </div>
+              <span className="font-semibold text-[13px] tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>
+                PastePretty
               </span>
+            </div>
+
+            <div className="w-px h-5 header-separator" style={{ background: "var(--border-subtle)" }} />
+
+            {/* Viz mode tabs */}
+            <div className="flex items-center gap-0.5 viz-tabs">
+              {([
+                { mode: "table" as VisualizationMode, icon: <Table size={13} />, label: "Table" },
+                { mode: "bar" as VisualizationMode, icon: <BarChart3 size={13} />, label: "Bar" },
+                { mode: "line" as VisualizationMode, icon: <LineChart size={13} />, label: "Line" },
+                { mode: "pie" as VisualizationMode, icon: <PieChart size={13} />, label: "Pie" },
+              ]).map(({ mode, icon, label }) => (
+                <button
+                  key={mode}
+                  onClick={() => handleChange({ vizMode: mode })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  style={{
+                    background: state.vizMode === mode ? "var(--surface-active)" : "transparent",
+                    color: state.vizMode === mode ? "var(--foreground)" : "var(--text-muted)",
+                    boxShadow: state.vizMode === mode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (state.vizMode !== mode) e.currentTarget.style.background = "var(--surface)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (state.vizMode !== mode) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {icon}
+                  <span className="nav-btn-label">{label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 header-actions">
-            {/* Light/Dark toggle */}
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1.5 header-actions">
             <button
               onClick={toggleColorMode}
               className="flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0"
               style={{
-                background: "var(--surface)",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-subtle)",
+                background: "transparent",
+                color: "var(--text-muted)",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              {colorMode === "dark" ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-
-            <div className="w-px h-5 mx-1 header-separator" style={{ background: "var(--border-subtle)" }} />
 
             <input
               ref={fileRef}
@@ -390,12 +411,11 @@ export default function Home() {
               onClick={() => fileRef.current?.click()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
-                background: "var(--surface)",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-subtle)",
+                background: "transparent",
+                color: "var(--text-muted)",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               title="Import file"
             >
               <Upload size={13} />
@@ -406,35 +426,34 @@ export default function Home() {
               onClick={() => setInputOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
-                background: "var(--surface)",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-subtle)",
+                background: "transparent",
+                color: "var(--text-muted)",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               title="Edit table data"
             >
               <FileText size={13} />
               <span className="nav-btn-label">Edit Data</span>
             </button>
 
-            <div className="flex items-center">
+            <div className="flex items-center ml-1">
               <button
                 onClick={() => handleExport("png")}
                 disabled={exporting}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
                 style={{ background: "var(--accent)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
               >
-                <Download size={14} />
-                {exporting ? "Exporting..." : "Export"}
+                <Download size={13} />
+                {exporting ? "..." : "Export"}
               </button>
               <button
                 ref={exportBtnRef}
                 onClick={() => setExportOpen(!exportOpen)}
                 disabled={exporting}
-                className="flex items-center py-1.5 px-2 rounded-r-lg text-white transition-all disabled:opacity-50"
+                className="flex items-center py-1.5 px-1.5 rounded-r-lg text-white transition-all disabled:opacity-50"
                 style={{
                   background: "var(--accent)",
                   borderLeft: "1px solid rgba(255,255,255,0.2)",
@@ -485,37 +504,6 @@ export default function Home() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Visualization mode tabs */}
-        <div
-          className="flex items-center gap-1 px-5 pb-2 viz-tabs"
-        >
-          {([
-            { mode: "table" as VisualizationMode, icon: <Table size={13} />, label: "Table" },
-            { mode: "bar" as VisualizationMode, icon: <BarChart3 size={13} />, label: "Bar Chart" },
-            { mode: "line" as VisualizationMode, icon: <LineChart size={13} />, label: "Line Chart" },
-            { mode: "pie" as VisualizationMode, icon: <PieChart size={13} />, label: "Pie Chart" },
-          ]).map(({ mode, icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => handleChange({ vizMode: mode })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                background: state.vizMode === mode ? "var(--accent)" : "transparent",
-                color: state.vizMode === mode ? "white" : "var(--text-muted)",
-              }}
-              onMouseEnter={(e) => {
-                if (state.vizMode !== mode) e.currentTarget.style.background = "var(--surface)";
-              }}
-              onMouseLeave={(e) => {
-                if (state.vizMode !== mode) e.currentTarget.style.background = "transparent";
-              }}
-            >
-              {icon}
-              <span className="nav-btn-label">{label}</span>
-            </button>
-          ))}
         </div>
       </header>
 
