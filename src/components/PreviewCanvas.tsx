@@ -3,7 +3,7 @@
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "@/lib/types";
 import { getTheme } from "@/lib/themes";
-import { backgroundToCss } from "@/lib/backgrounds";
+import { backgroundToCss, isImageBackground } from "@/lib/backgrounds";
 import { transformThemeForLightMode, transformBackgroundForLightMode } from "@/lib/lightMode";
 import TableRenderer from "./TableRenderer";
 import ChartRenderer from "./ChartRenderer";
@@ -76,7 +76,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
       updateScale();
     }, [
       state.tableData, state.padding, state.fontSize, state.windowStyle,
-      state.showGrid, state.showRowNumbers, state.borderRadius,
+      state.showGrid, state.showRowNumbers, state.borderRadius, state.vizBorderRadius,
       state.fontFamily, state.title, state.vizMode, state.chartConfig,
       exporting, updateScale,
     ]);
@@ -130,13 +130,18 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
               padding: `${state.padding}px`,
               borderRadius: `${state.borderRadius}px`,
               display: "inline-block",
+              ...(isImageBackground(state.background) && {
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }),
               ...(isTransparent && {
                 outline: "1px dashed var(--border)",
                 outlineOffset: "-1px",
               }),
             }}
           >
-            <WindowFrame style={state.windowStyle} title={state.title || undefined} borderRadius={state.borderRadius}>
+            <WindowFrame style={state.windowStyle} title={state.title || undefined} borderRadius={state.vizBorderRadius} theme={theme}>
               {state.vizMode === "table" ? (
                 <TableRenderer
                   data={state.tableData}

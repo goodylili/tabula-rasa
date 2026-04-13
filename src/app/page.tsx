@@ -13,7 +13,7 @@ import InputDrawer from "@/components/InputDrawer";
 import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database, Sun, Moon, Table, BarChart3, LineChart, PieChart } from "lucide-react";
 import { VisualizationMode } from "@/lib/types";
 
-const STORAGE_KEY = "tabula-rasa-state";
+const STORAGE_KEY = "pastepretty-state";
 
 const DEFAULT_STATE: AppState = {
   rawInput: SAMPLE_MARKDOWN,
@@ -31,6 +31,7 @@ const DEFAULT_STATE: AppState = {
   highlightFirstCol: true,
   showRowNumbers: true,
   borderRadius: 32,
+  vizBorderRadius: 12,
   padding: 64,
   fontFamily: "'Noto Sans Mono', monospace",
   customHeaderBg: "",
@@ -64,6 +65,7 @@ const DEFAULT_STATE: AppState = {
       sortSlices: false,
       startAngle: 0,
     },
+    customColors: {},
   },
 };
 
@@ -131,7 +133,7 @@ export default function Home() {
 
   // Load color mode preference
   useEffect(() => {
-    const saved = localStorage.getItem("tabula-rasa-color-mode");
+    const saved = localStorage.getItem("pastepretty-color-mode");
     if (saved === "light" || saved === "dark") {
       setColorMode(saved);
       document.documentElement.setAttribute("data-theme", saved);
@@ -142,7 +144,7 @@ export default function Home() {
     setColorMode((prev) => {
       const next = prev === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
-      localStorage.setItem("tabula-rasa-color-mode", next);
+      localStorage.setItem("pastepretty-color-mode", next);
       return next;
     });
   }, []);
@@ -174,6 +176,7 @@ export default function Home() {
         next.customAltRowBg = "";
         next.customRowText = "";
         next.customBorderColor = "";
+        next.chartConfig = { ...next.chartConfig, customColors: {} };
       }
 
       if ("rawInput" in patch || "inputFormat" in patch) {
@@ -234,7 +237,7 @@ export default function Home() {
         dataUrl = await toPng(canvasRef.current, opts);
       }
       const link = document.createElement("a");
-      link.download = `tabula-rasa-${state.themeId}.${imgFormat}`;
+      link.download = `pastepretty-${state.themeId}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -254,7 +257,7 @@ export default function Home() {
       if (!state.tableData) return;
       const content = exportData(state.tableData, format, state.title || "my_table");
       const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `tabula-rasa.${ext}`);
+      downloadText(content, `pastepretty.${ext}`);
     },
     [handleExportImage, state.tableData, state.title]
   );
@@ -343,7 +346,7 @@ export default function Home() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="font-bold text-sm tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>
-                tabula rasa
+                PastePretty
               </span>
               <span
                 className="text-[10px] font-medium px-1.5 py-0.5 rounded-md nav-brand-text"
@@ -357,11 +360,11 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 header-actions">
             {/* Light/Dark toggle */}
             <button
               onClick={toggleColorMode}
-              className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+              className="flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0"
               style={{
                 background: "var(--surface)",
                 color: "var(--text-secondary)",
@@ -374,7 +377,7 @@ export default function Home() {
               {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
             </button>
 
-            <div className="w-px h-5 mx-1" style={{ background: "var(--border-subtle)" }} />
+            <div className="w-px h-5 mx-1 header-separator" style={{ background: "var(--border-subtle)" }} />
 
             <input
               ref={fileRef}
@@ -486,7 +489,7 @@ export default function Home() {
 
         {/* Visualization mode tabs */}
         <div
-          className="flex items-center gap-1 px-5 pb-2"
+          className="flex items-center gap-1 px-5 pb-2 viz-tabs"
         >
           {([
             { mode: "table" as VisualizationMode, icon: <Table size={13} />, label: "Table" },

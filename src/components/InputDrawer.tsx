@@ -51,7 +51,7 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
         }}
       >
         <div
-          className="flex items-center justify-between px-5 shrink-0"
+          className="flex items-center justify-between px-3 sm:px-5 shrink-0"
           style={{
             height: "50px",
             borderBottom: "1px solid var(--panel-border)",
@@ -73,7 +73,7 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
         </div>
 
         {/* Format Buttons */}
-        <div className="flex gap-1.5 px-5 pt-4 pb-2 flex-wrap">
+        <div className="flex gap-1.5 px-3 sm:px-5 pt-4 pb-2 flex-wrap">
           {FORMATS.map((fmt) => (
             <button
               key={fmt.id}
@@ -101,14 +101,14 @@ export default function InputDrawer({ open, onClose, state, onChange }: InputDra
         </div>
 
         {/* Hint */}
-        <div className="px-5 pb-2">
+        <div className="px-3 sm:px-5 pb-2">
           <p style={{ fontSize: "11px", color: "var(--text-subtle)", lineHeight: "1.4" }}>
             Switch formats to convert the current table data. Paste any format and use Auto to detect.
           </p>
         </div>
 
         {/* Textarea */}
-        <div className="flex-1 px-5 pb-5 pt-1">
+        <div className="flex-1 px-3 sm:px-5 pb-5 pt-1">
           <textarea
             value={state.rawInput}
             onChange={(e) => onChange({ rawInput: e.target.value })}

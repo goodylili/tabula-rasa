@@ -120,6 +120,8 @@ function transformColor(color: string, role: "bg" | "text" | "border" | "accent-
 // Transform a background CSS string for light mode
 export function transformBackgroundForLightMode(bgCss: string): string {
   if (bgCss === "transparent") return bgCss;
+  // Don't transform image backgrounds (data URLs or url() references)
+  if (bgCss.startsWith("url(")) return bgCss;
 
   // Replace all hex colors in the string (handles gradients too)
   return bgCss.replace(/#[0-9a-fA-F]{3,8}/g, (match) => {

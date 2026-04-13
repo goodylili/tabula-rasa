@@ -6,7 +6,8 @@ import { AppState, Background, ChartConfig, BarChartConfig, LineChartConfig, Pie
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Upload } from "lucide-react";
+import { generateChartColors } from "./ChartRenderer";
 
 interface ControlPanelProps {
   state: AppState;
@@ -28,7 +29,7 @@ function ControlLabel({ children }: { children: React.ReactNode }) {
 
 function ControlGroup({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col shrink-0">
       <ControlLabel>{label}</ControlLabel>
       <div className="flex items-center" style={{ height: "28px" }}>
         {children}
@@ -150,7 +151,7 @@ function Dropdown({
           background: "var(--surface)",
           color: "var(--text-primary)",
           border: "1px solid var(--border-subtle)",
-          minWidth: "120px",
+          minWidth: "100px",
         }}
       >
         {selected?.extra}
@@ -256,7 +257,7 @@ function SegmentToggle({
 }
 
 function Divider() {
-  return <div className="self-stretch w-px my-1" style={{ background: "var(--border-subtle)" }} />;
+  return <div className="self-stretch w-px my-1 shrink-0 hidden sm:block" style={{ background: "var(--border-subtle)" }} />;
 }
 
 function ColorSwatch({
@@ -287,7 +288,7 @@ function ColorSwatch({
         onChange={(e) => onChangeColor(e.target.value)}
         className="sr-only"
       />
-      <span className="text-[10px] truncate" style={{ color: "var(--text-secondary)", width: "60px" }}>
+      <span className="text-[10px] truncate flex-1" style={{ color: "var(--text-secondary)" }}>
         {label}
       </span>
     </div>
@@ -305,8 +306,59 @@ function ColorPopover({
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const hasCustom = state.customHeaderBg || state.customHeaderText || state.customRowBg ||
+
+  const isTable = state.vizMode === "table";
+  const isChart = !isTable;
+  const custom = state.chartConfig.customColors || {};
+
+  // Build chart color slots dynamically from data
+  const chartSlots: { key: string; label: string; fallback: string }[] = [];
+  if (isChart && state.tableData) {
+    const autoColors = generateChartColors(theme, Math.max(
+      state.chartConfig.valueColumns.length,
+      state.tableData.rows.length
+    ));
+    if (state.vizMode === "pie") {
+      state.tableData.rows.forEach((row, i) => {
+        const label = row[state.chartConfig.labelColumn] || `Row ${i + 1}`;
+        chartSlots.push({ key: label, label, fallback: autoColors[i] || "#888" });
+      });
+    } else {
+      state.chartConfig.valueColumns.forEach((colIdx, i) => {
+        const name = state.tableData!.headers[colIdx] || `Column ${colIdx + 1}`;
+        chartSlots.push({ key: name, label: name, fallback: autoColors[i] || "#888" });
+      });
+    }
+  }
+
+  const hasTableCustom = state.customHeaderBg || state.customHeaderText || state.customRowBg ||
     state.customAltRowBg || state.customRowText || state.customBorderColor;
+  const hasChartCustom = Object.keys(custom).length > 0;
+  const hasCustom = isTable ? hasTableCustom : hasChartCustom;
+
+  // Preview dots: first 3 relevant colors
+  const previewColors = isTable
+    ? [
+        state.customHeaderBg || theme.accentBg,
+        state.customRowBg || theme.rowBg,
+        state.customRowText || theme.rowText,
+      ]
+    : chartSlots.slice(0, 3).map((s) => custom[s.key] || s.fallback);
+
+  const setChartColor = (key: string, color: string) => {
+    onChange({
+      chartConfig: {
+        ...state.chartConfig,
+        customColors: { ...custom, [key]: color },
+      },
+    });
+  };
+
+  const resetChartColors = () => {
+    onChange({
+      chartConfig: { ...state.chartConfig, customColors: {} },
+    });
+  };
 
   const getPopoverStyle = (): React.CSSProperties => {
     if (!triggerRef.current) return {};
@@ -314,7 +366,6 @@ function ColorPopover({
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const popoverW = 220;
-    // Keep popover within viewport horizontally
     const left = Math.min(rect.right - popoverW, Math.max(8, rect.left));
 
     if (spaceAbove > spaceBelow) {
@@ -323,6 +374,12 @@ function ColorPopover({
       return { position: "fixed", top: rect.bottom + 8, left, width: `${popoverW}px` };
     }
   };
+
+  const popoverTitle = isTable
+    ? "Table Colors"
+    : state.vizMode === "pie"
+      ? "Slice Colors"
+      : "Series Colors";
 
   return (
     <div>
@@ -338,9 +395,9 @@ function ColorPopover({
         }}
       >
         <div className="flex -space-x-1">
-          <div className="w-3 h-3 rounded-full" style={{ background: state.customHeaderBg || theme.accentBg, border: "1px solid var(--swatch-border)" }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowBg || theme.rowBg, border: "1px solid var(--swatch-border)" }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: state.customRowText || theme.rowText, border: "1px solid var(--swatch-border)" }} />
+          {previewColors.map((c, i) => (
+            <div key={i} className="w-3 h-3 rounded-full" style={{ background: c, border: "1px solid var(--swatch-border)" }} />
+          ))}
         </div>
         Customize
       </button>
@@ -361,26 +418,48 @@ function ColorPopover({
             }}
           >
             <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-subtle)" }}>
-              Custom Colors
+              {popoverTitle}
             </div>
-            <div className="flex flex-col gap-2.5">
-              <ColorSwatch label="Header bg" value={state.customHeaderBg} fallback={theme.accentBg} onChangeColor={(c) => onChange({ customHeaderBg: c })} />
-              <ColorSwatch label="Header text" value={state.customHeaderText} fallback={theme.accentText} onChangeColor={(c) => onChange({ customHeaderText: c })} />
-              <ColorSwatch label="Row bg" value={state.customRowBg} fallback={theme.rowBg} onChangeColor={(c) => onChange({ customRowBg: c })} />
-              <ColorSwatch label="Alt row bg" value={state.customAltRowBg} fallback={theme.altRowBg} onChangeColor={(c) => onChange({ customAltRowBg: c })} />
-              <ColorSwatch label="Text color" value={state.customRowText} fallback={theme.rowText} onChangeColor={(c) => onChange({ customRowText: c })} />
-              <ColorSwatch label="Border" value={state.customBorderColor} fallback={theme.borderColor} onChangeColor={(c) => onChange({ customBorderColor: c })} />
-            </div>
+
+            {isTable ? (
+              <div className="flex flex-col gap-2.5">
+                <ColorSwatch label="Header bg" value={state.customHeaderBg} fallback={theme.accentBg} onChangeColor={(c) => onChange({ customHeaderBg: c })} />
+                <ColorSwatch label="Header text" value={state.customHeaderText} fallback={theme.accentText} onChangeColor={(c) => onChange({ customHeaderText: c })} />
+                <ColorSwatch label="Row bg" value={state.customRowBg} fallback={theme.rowBg} onChangeColor={(c) => onChange({ customRowBg: c })} />
+                <ColorSwatch label="Alt row bg" value={state.customAltRowBg} fallback={theme.altRowBg} onChangeColor={(c) => onChange({ customAltRowBg: c })} />
+                <ColorSwatch label="Text color" value={state.customRowText} fallback={theme.rowText} onChangeColor={(c) => onChange({ customRowText: c })} />
+                <ColorSwatch label="Border" value={state.customBorderColor} fallback={theme.borderColor} onChangeColor={(c) => onChange({ customBorderColor: c })} />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5" style={{ maxHeight: "280px", overflowY: "auto" }}>
+                {chartSlots.map((slot) => (
+                  <ColorSwatch
+                    key={slot.key}
+                    label={slot.label}
+                    value={custom[slot.key] || ""}
+                    fallback={slot.fallback}
+                    onChangeColor={(c) => setChartColor(slot.key, c)}
+                  />
+                ))}
+              </div>
+            )}
+
             {hasCustom && (
               <button
-                onClick={() => onChange({
-                  customHeaderBg: "", customHeaderText: "", customRowBg: "",
-                  customAltRowBg: "", customRowText: "", customBorderColor: "",
-                })}
+                onClick={() => {
+                  if (isTable) {
+                    onChange({
+                      customHeaderBg: "", customHeaderText: "", customRowBg: "",
+                      customAltRowBg: "", customRowText: "", customBorderColor: "",
+                    });
+                  } else {
+                    resetChartColors();
+                  }
+                }}
                 className="w-full mt-3 py-1.5 rounded-lg text-[10px] font-medium transition-all"
                 style={{ background: "var(--surface)", color: "var(--text-muted)" }}
               >
-                Reset to theme defaults
+                Reset to defaults
               </button>
             )}
           </div>
@@ -393,9 +472,22 @@ function ColorPopover({
 
 export default function ControlPanel({ state, onChange, collapsed, onToggleCollapse }: ControlPanelProps) {
   const colorRef = useRef<HTMLInputElement>(null);
+  const bgImageRef = useRef<HTMLInputElement>(null);
   const currentTheme = getTheme(state.themeId);
 
   const setBackground = (bg: Background) => onChange({ background: bg });
+
+  const handleBgImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setBackground({ type: "image", imageUrl: dataUrl });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }, []);
 
   const themeOptions = themes.map((t) => ({
     id: t.id,
@@ -432,9 +524,11 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
   }));
 
   const currentBgLabel =
-    presetBackgrounds.find(
-      (p) => JSON.stringify(p.bg) === JSON.stringify(state.background)
-    )?.label ?? "Custom";
+    state.background.type === "image"
+      ? "Image"
+      : presetBackgrounds.find(
+          (p) => JSON.stringify(p.bg) === JSON.stringify(state.background)
+        )?.label ?? "Custom";
 
   // Build column options for chart config dropdowns
   const columnOptions = state.tableData
@@ -491,6 +585,25 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
               type="color"
               defaultValue={state.background.color ?? "#1a1a2e"}
               onChange={(e) => setBackground({ type: "solid", color: e.target.value })}
+              className="sr-only"
+            />
+            <button
+              onClick={() => bgImageRef.current?.click()}
+              className="w-7 h-7 rounded-lg shrink-0 transition-all flex items-center justify-center"
+              style={{
+                background: state.background.type === "image" ? "var(--accent)" : "var(--surface)",
+                border: "1px solid var(--border-strong)",
+                color: state.background.type === "image" ? "var(--accent-text)" : "var(--text-muted)",
+              }}
+              title="Upload background image"
+            >
+              <Upload size={12} />
+            </button>
+            <input
+              ref={bgImageRef}
+              type="file"
+              accept="image/*"
+              onChange={handleBgImageUpload}
               className="sr-only"
             />
           </div>
@@ -557,7 +670,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             />
           </ControlGroup>
 
-          <ControlGroup label="Radius">
+          <ControlGroup label="BG Radius">
             <div className="flex items-center gap-2">
               <input
                 type="range"
@@ -576,6 +689,29 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
                 style={{ color: "var(--text-muted)", width: "24px" }}
               >
                 {state.borderRadius}
+              </span>
+            </div>
+          </ControlGroup>
+
+          <ControlGroup label="Viz Radius">
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="32"
+                step="1"
+                value={state.vizBorderRadius}
+                onChange={(e) => onChange({ vizBorderRadius: Number(e.target.value) })}
+                style={{
+                  width: "70px",
+                  accentColor: "var(--accent)",
+                }}
+              />
+              <span
+                className="text-xs font-medium tabular-nums"
+                style={{ color: "var(--text-muted)", width: "24px" }}
+              >
+                {state.vizBorderRadius}
               </span>
             </div>
           </ControlGroup>
@@ -615,7 +751,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             </ControlGroup>
 
             <ControlGroup label="Values">
-              <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex items-center gap-1 flex-wrap shrink-0">
                 {columnOptions.map((col) => {
                   const idx = Number(col.id);
                   const isSelected = state.chartConfig.valueColumns.includes(idx);
@@ -801,9 +937,9 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
   );
 
   return (
-    <div className="shrink-0 pb-4 px-4">
+    <div className="shrink-0 pb-4 px-2 sm:px-4">
       <div
-        className="panel-glow control-panel-grid px-5 py-3.5 rounded-2xl mx-auto"
+        className="panel-glow control-panel-grid px-3 sm:px-5 py-3.5 rounded-2xl mx-auto"
         style={{
           background: "var(--panel-bg)",
           border: "1px solid var(--panel-border)",

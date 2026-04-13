@@ -181,3 +181,80 @@ body {
     display: none;
   }
 }
+
+/* ── Mobile-first responsive enhancements ────────────────────── */
+
+/* Header actions: wrap and shrink on small screens */
+@media (max-width: 480px) {
+  .header-actions {
+    gap: 4px !important;
+  }
+  .header-actions .header-separator {
+    display: none;
+  }
+}
+
+/* Visualization mode tabs: horizontal scroll on mobile */
+.viz-tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.viz-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Control panel: horizontal scroll per row on mobile */
+@media (max-width: 768px) {
+  .control-row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .control-row::-webkit-scrollbar {
+    height: 3px;
+  }
+  .control-row::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 2px;
+  }
+}
+
+/* Sub-page footer control rows */
+.sub-control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .sub-control-row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .sub-control-row::-webkit-scrollbar {
+    height: 3px;
+  }
+  .sub-control-row::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 2px;
+  }
+  .sub-control-row label,
+  .sub-control-row > div,
+  .sub-control-row > button {
+    flex-shrink: 0;
+  }
+}
+
+/* Input drawer: full width on very small screens */
+@media (max-width: 480px) {
+  .input-drawer {
+    width: 100vw !important;
+  }
+}

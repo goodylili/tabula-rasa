@@ -97,9 +97,16 @@ export function backgroundToCss(bg: Background): string {
               radial-gradient(at 80% 0%, ${bg.meshColors?.[1] ?? "#7928ca"} 0px, transparent 50%),
               radial-gradient(at 0% 50%, ${bg.meshColors?.[2] ?? "#0070f3"} 0px, transparent 50%),
               #000`;
+    case "image":
+      return bg.imageUrl ? `url(${bg.imageUrl})` : "#0d0d0d";
     case "none":
       return "transparent";
     default:
       return "#0d0d0d";
   }
+}
+
+/** Check if a Background is an image type — the container needs special CSS */
+export function isImageBackground(bg: Background): boolean {
+  return bg.type === "image" && !!bg.imageUrl;
 }

@@ -3,13 +3,14 @@ export interface TableData {
   rows: string[][];
 }
 
-export type BackgroundType = "solid" | "gradient" | "mesh" | "none";
+export type BackgroundType = "solid" | "gradient" | "mesh" | "image" | "none";
 
 export interface Background {
   type: BackgroundType;
   color?: string;
   gradient?: string;
   meshColors?: string[];
+  imageUrl?: string;
 }
 
 export interface TableTheme {
@@ -68,6 +69,7 @@ export interface ChartConfig {
   bar: BarChartConfig;
   line: LineChartConfig;
   pie: PieChartConfig;
+  customColors: Record<string, string>; // keyed by column header (bar/line) or label value (pie)
 }
 
 export interface AppState {
@@ -84,6 +86,7 @@ export interface AppState {
   highlightFirstCol: boolean;
   showRowNumbers: boolean;
   borderRadius: number;
+  vizBorderRadius: number;
   padding: number;
   fontFamily: string;
   // Custom color overrides (empty string = use theme default)
