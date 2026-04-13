@@ -762,7 +762,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
       className="shrink-0 control-panel-grid"
       style={{
         background: "var(--panel-bg)",
-        borderBottom: "1px solid var(--panel-border)",
+        borderTop: "1px solid var(--panel-border)",
       }}
     >
       {/* Mobile toggle bar */}
