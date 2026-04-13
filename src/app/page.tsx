@@ -316,17 +316,18 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* Header */}
-      <header
-        className="shrink-0"
-        style={{
-          background: "var(--panel-bg)",
-          borderBottom: "1px solid var(--panel-border)",
-        }}
-      >
+      <header className="shrink-0 pt-3 px-2 sm:px-4">
+        <div
+          className="rounded-2xl mx-auto"
+          style={{
+            background: "var(--panel-bg)",
+            border: "1px solid var(--panel-border)",
+          }}
+        >
         {/* Navbar */}
         <div
           className="flex items-center justify-between px-5 mx-auto"
-          style={{ height: "56px", maxWidth: "1400px" }}
+          style={{ height: "52px" }}
         >
           {/* Left: Brand + Viz tabs */}
           <div className="flex items-center gap-5">
@@ -505,7 +506,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-
+        </div>
       </header>
 
       <main className="flex-1 min-h-0 overflow-hidden flex relative">

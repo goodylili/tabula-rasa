@@ -125,7 +125,8 @@ body {
   flex-direction: column;
   gap: 8px;
   width: fit-content;
-  max-width: 100%;
+  max-width: 95%;
+  min-width: min(900px, 100%);
 }
 
 .control-row {
