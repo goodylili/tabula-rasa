@@ -325,8 +325,8 @@ export default function Home() {
       >
         {/* Navbar */}
         <div
-          className="flex items-center justify-between px-5"
-          style={{ height: "56px" }}
+          className="flex items-center justify-between px-5 mx-auto"
+          style={{ height: "56px", maxWidth: "1400px" }}
         >
           {/* Left: Brand + Viz tabs */}
           <div className="flex items-center gap-5">
