@@ -109,7 +109,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     return (
       <div
         ref={containerRef}
-        className="flex-1 flex items-start justify-center overflow-auto p-4 sm:p-8"
+        className="flex-1 flex items-center justify-center overflow-auto p-4 sm:p-8"
       >
         <div
           style={{

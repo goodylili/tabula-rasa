@@ -1109,7 +1109,7 @@ export default function ComparisonPage() {
             </div>
           </div>
         ) : (
-          <div ref={containerRef} className="flex-1 flex items-start justify-center overflow-auto p-4 sm:p-8">
+          <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-auto p-4 sm:p-8">
             <div style={{
               transform: exporting ? undefined : `scale(${scale})`,
               transformOrigin: "top center",
