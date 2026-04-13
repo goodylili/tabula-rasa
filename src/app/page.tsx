@@ -318,7 +318,7 @@ export default function Home() {
       {/* Header */}
       <header className="shrink-0 pt-3 px-2 sm:px-4">
         <div
-          className="app-card rounded-2xl mx-auto"
+          className="app-card rounded-xl mx-auto"
           style={{
             background: "var(--panel-bg)",
             border: "1px solid var(--panel-border)",

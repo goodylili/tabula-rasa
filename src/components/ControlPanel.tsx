@@ -941,7 +941,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
   return (
     <div className="shrink-0 pb-4 px-2 sm:px-4">
       <div
-        className="panel-glow control-panel-grid app-card px-3 sm:px-5 py-3.5 rounded-2xl mx-auto"
+        className="panel-glow control-panel-grid app-card px-3 sm:px-5 py-3.5 rounded-xl mx-auto"
         style={{
           background: "var(--panel-bg)",
           border: "1px solid var(--panel-border)",
