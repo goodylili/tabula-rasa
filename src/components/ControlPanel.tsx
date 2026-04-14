@@ -625,7 +625,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
           />
         </ControlGroup>
 
-        <ControlGroup label="Size">
+        <ControlGroup label="Font Size">
           <SegmentToggle
             values={["12", "14", "16", "18"]}
             active={String(state.fontSize)}
@@ -664,7 +664,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             />
           </ControlGroup>
 
-          <ControlGroup label="Padding">
+          <ControlGroup label="Size">
             <SegmentToggle
               values={["0", "16", "32", "48", "64", "128"]}
               active={String(state.padding)}
@@ -792,7 +792,7 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
               />
             </ControlGroup>
 
-            <ControlGroup label="Padding">
+            <ControlGroup label="Size">
               <SegmentToggle
                 values={["0", "16", "32", "48", "64", "128"]}
                 active={String(state.padding)}

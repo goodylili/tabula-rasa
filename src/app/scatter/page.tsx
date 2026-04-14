@@ -1293,7 +1293,7 @@ export default function ScatterPage() {
 
           {/* Font Size */}
           <div className="flex flex-col shrink-0">
-            <div style={labelStyle}>Size</div>
+            <div style={labelStyle}>Font Size</div>
             <select
               value={state.fontSize}
               onChange={(e) => handleChange({ fontSize: Number(e.target.value) })}
@@ -1403,9 +1403,9 @@ export default function ScatterPage() {
             </div>
           </div>
 
-          {/* Padding */}
+          {/* Size */}
           <div className="flex flex-col shrink-0">
-            <div style={labelStyle}>Padding</div>
+            <div style={labelStyle}>Size</div>
             <select
               value={state.padding}
               onChange={(e) => handleChange({ padding: Number(e.target.value) })}

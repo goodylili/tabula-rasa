@@ -1185,7 +1185,7 @@ export default function ComparisonPage() {
               onChange={(id) => handleChange({ fontFamily: id })} />
           </ControlGroup>
 
-          <SliderControl label="Size" value={state.fontSize} min={10} max={20}
+          <SliderControl label="Font Size" value={state.fontSize} min={10} max={20}
             onChange={(v) => handleChange({ fontSize: v })} />
 
           <ControlGroup label="Format">
@@ -1238,7 +1238,7 @@ export default function ComparisonPage() {
               onChange={(id) => handleChange({ windowStyle: id as ComparisonState["windowStyle"] })} />
           </ControlGroup>
 
-          <SliderControl label="Padding" value={state.padding} min={0} max={128} step={8}
+          <SliderControl label="Size" value={state.padding} min={0} max={128} step={8}
             onChange={(v) => handleChange({ padding: v })} />
         </div>
 

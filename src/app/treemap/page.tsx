@@ -1080,7 +1080,7 @@ export default function TreemapPage() {
             onChange={(v) => handleChange({ windowStyle: v as "mac" | "windows" | "none" })}
           />
           <Slider
-            label="Padding"
+            label="Size"
             value={state.padding}
             min={0}
             max={128}

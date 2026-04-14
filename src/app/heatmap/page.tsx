@@ -1014,7 +1014,7 @@ export default function HeatmapPage() {
               onChange={(id) => handleChange({ fontFamily: id })} />
           </ControlGroup>
 
-          <SliderControl label="Size" value={state.fontSize} min={10} max={20}
+          <SliderControl label="Font Size" value={state.fontSize} min={10} max={20}
             onChange={(v) => handleChange({ fontSize: v })} />
 
           <ControlGroup label="Title">
@@ -1047,7 +1047,7 @@ export default function HeatmapPage() {
               onChange={(id) => handleChange({ windowStyle: id as HeatmapState["windowStyle"] })} />
           </ControlGroup>
 
-          <SliderControl label="Padding" value={state.padding} min={0} max={128} step={8}
+          <SliderControl label="Size" value={state.padding} min={0} max={128} step={8}
             onChange={(v) => handleChange({ padding: v })} />
 
           <SliderControl label="Radius" value={state.borderRadius} min={0} max={48}

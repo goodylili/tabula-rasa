@@ -1268,7 +1268,7 @@ export default function FunnelPage() {
           {/* Font size */}
           <label className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: "var(--text-muted)" }}>
-              Size
+              Font Size
             </span>
             <select
               value={state.fontSize}
@@ -1382,10 +1382,10 @@ export default function FunnelPage() {
             </select>
           </label>
 
-          {/* Padding */}
+          {/* Size */}
           <label className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: "var(--text-muted)" }}>
-              Padding
+              Size
             </span>
             <select
               value={state.padding}
