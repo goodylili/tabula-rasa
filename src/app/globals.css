@@ -82,6 +82,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 

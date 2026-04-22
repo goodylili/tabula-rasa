@@ -4,16 +4,27 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { TableData, TableTheme } from "@/lib/types";
 import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
 
-// Render inline `code` spans within cell text
+// Render inline markdown within cell text: `code`, **bold**, *italic*, _italic_, ~~strike~~, [text](url)
 function renderCellContent(text: string): React.ReactNode {
-  if (!text.includes("`")) return text;
-  const parts = text.split(/(`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
-      const code = part.slice(1, -1);
-      return (
+  if (!text) return text;
+  // Fast path: no markdown characters at all
+  if (!/[`*_~\[]/.test(text)) return text;
+
+  const pattern = /(`[^`]+`)|(\*\*[^*\n]+\*\*)|(__[^_\n]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)|(~~[^~\n]+~~)|(\[[^\]\n]+\]\([^)\n]+\))/g;
+  const out: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      out.push(text.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith("`")) {
+      out.push(
         <code
-          key={i}
+          key={key++}
           style={{
             background: "var(--code-bg)",
             padding: "1px 5px",
@@ -22,12 +33,39 @@ function renderCellContent(text: string): React.ReactNode {
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           }}
         >
-          {code}
+          {token.slice(1, -1)}
         </code>
       );
+    } else if (token.startsWith("**") || token.startsWith("__")) {
+      out.push(<strong key={key++}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("~~")) {
+      out.push(<s key={key++}>{token.slice(2, -2)}</s>);
+    } else if (token.startsWith("[")) {
+      const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
+      if (linkMatch) {
+        out.push(
+          <a
+            key={key++}
+            href={linkMatch[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit", textDecoration: "underline" }}
+          >
+            {linkMatch[1]}
+          </a>
+        );
+      } else {
+        out.push(token);
+      }
+    } else if (token.startsWith("*") || token.startsWith("_")) {
+      out.push(<em key={key++}>{token.slice(1, -1)}</em>);
+    } else {
+      out.push(token);
     }
-    return part;
-  });
+    lastIndex = match.index + token.length;
+  }
+  if (lastIndex < text.length) out.push(text.slice(lastIndex));
+  return out;
 }
 
 function EditableCell({
@@ -491,7 +529,7 @@ export default function TableRenderer({
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    {header}
+                    {renderCellContent(header)}
                     {interactive && (
                       <span style={{ opacity: sortCol === i ? 1 : 0.3, display: "inline-flex" }}>
                         {sortCol === i && sortDir === "asc" ? (

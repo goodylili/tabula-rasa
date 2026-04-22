@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, Background } from "@/lib/types";
 import { detectAndParse } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds, backgroundToCss } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
@@ -380,7 +380,7 @@ export default function TreemapPage() {
       else if (imgFormat === "svg") dataUrl = await toSvg(canvasRef.current, opts);
       else dataUrl = await toPng(canvasRef.current, opts);
       const link = document.createElement("a");
-      link.download = `pastepretty-treemap-${state.themeId}.${imgFormat}`;
+      link.download = `${sanitizeFilename(state.title, "pastepretty-treemap")}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -388,7 +388,7 @@ export default function TreemapPage() {
     } finally {
       setExporting(false);
     }
-  }, [state.themeId]);
+  }, [state.title]);
 
   const handleExport = useCallback(async (format: ExportFormat) => {
     setExportOpen(false);
@@ -399,7 +399,7 @@ export default function TreemapPage() {
     if (!state.tableData) return;
     const content = exportData(state.tableData, format, state.title || "treemap");
     const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-    downloadText(content, `pastepretty-treemap.${ext}`);
+    downloadText(content, `${sanitizeFilename(state.title, "pastepretty-treemap")}.${ext}`);
   }, [handleExportImage, state.tableData, state.title]);
 
   const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -603,7 +603,7 @@ export default function TreemapPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header
         className="shrink-0"

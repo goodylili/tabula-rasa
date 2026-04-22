@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { AppState } from "@/lib/types";
 import { detectAndParse, SAMPLE_MARKDOWN, SAMPLE_CHART_MARKDOWN } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
 import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
@@ -237,7 +237,7 @@ export default function Home() {
         dataUrl = await toPng(canvasRef.current, opts);
       }
       const link = document.createElement("a");
-      link.download = `pastepretty-${state.themeId}.${imgFormat}`;
+      link.download = `${sanitizeFilename(state.title, "pastepretty")}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -245,7 +245,7 @@ export default function Home() {
     } finally {
       setExporting(false);
     }
-  }, [state.themeId]);
+  }, [state.title]);
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
@@ -257,7 +257,7 @@ export default function Home() {
       if (!state.tableData) return;
       const content = exportData(state.tableData, format, state.title || "my_table");
       const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `pastepretty.${ext}`);
+      downloadText(content, `${sanitizeFilename(state.title, "pastepretty")}.${ext}`);
     },
     [handleExportImage, state.tableData, state.title]
   );
@@ -314,7 +314,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* Header */}
       <header className="shrink-0 pt-3 px-2 sm:px-4">
         <div

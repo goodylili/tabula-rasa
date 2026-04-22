@@ -101,6 +101,11 @@ export function exportData(data: TableData, format: ExportFormat, tableName?: st
   }
 }
 
+export function sanitizeFilename(name: string, fallback: string): string {
+  const cleaned = name.trim().replace(/[\/\\?%*:|"<>]/g, "").replace(/\s+/g, "-");
+  return cleaned || fallback;
+}
+
 export function downloadText(content: string, filename: string) {
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);

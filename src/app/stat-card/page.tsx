@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, TableTheme, Background } from "@/lib/types";
 import { detectAndParse } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds, backgroundToCss } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
@@ -902,7 +902,7 @@ export default function StatCardPage() {
         dataUrl = await toPng(canvasRef.current, opts);
       }
       const link = document.createElement("a");
-      link.download = `pastepretty-stat-card-${state.themeId}.${imgFormat}`;
+      link.download = `${sanitizeFilename(state.title, "pastepretty-stat-card")}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -910,7 +910,7 @@ export default function StatCardPage() {
     } finally {
       setExporting(false);
     }
-  }, [state.themeId]);
+  }, [state.title]);
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
@@ -922,7 +922,7 @@ export default function StatCardPage() {
       if (!state.tableData) return;
       const content = exportData(state.tableData, format, state.title || "stat_cards");
       const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `pastepretty-stat-card.${ext}`);
+      downloadText(content, `${sanitizeFilename(state.title, "pastepretty-stat-card")}.${ext}`);
     },
     [handleExportImage, state.tableData, state.title]
   );
@@ -988,7 +988,7 @@ export default function StatCardPage() {
   // RENDER
   // =========================================================================
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* -- Header -------------------------------------------------------- */}
       <header
         className="shrink-0"
