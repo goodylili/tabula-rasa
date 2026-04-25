@@ -1,17 +1,15 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
-import { AppState } from "@/lib/types";
+import { AppState, VisualizationMode } from "@/lib/types";
 import { detectAndParse, SAMPLE_MARKDOWN, SAMPLE_CHART_MARKDOWN } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
+import { sanitizeFilename } from "@/lib/exporters";
 import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import InputDrawer from "@/components/InputDrawer";
-import { Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText, Database, Sun, Moon, Table, BarChart3, LineChart, PieChart } from "lucide-react";
-import { VisualizationMode } from "@/lib/types";
+import { Sun, Moon, X } from "lucide-react";
 
 const STORAGE_KEY = "pastepretty-state";
 
@@ -20,21 +18,19 @@ const DEFAULT_STATE: AppState = {
   inputFormat: "auto",
   tableData: detectAndParse(SAMPLE_MARKDOWN),
   themeId: "vercel",
-  background: {
-    type: "none",
-  },
+  background: { type: "none" },
   windowStyle: "mac",
-  fontSize: 18,
+  fontSize: 14,
   showGrid: true,
   showColumnLines: false,
-  stripedRows: true,
-  highlightFirstRow: true,
+  stripedRows: false,
+  highlightFirstRow: false,
   highlightFirstCol: true,
   showRowNumbers: true,
-  borderRadius: 32,
+  borderRadius: 14,
   vizBorderRadius: 12,
-  padding: 64,
-  fontFamily: "'Noto Sans Mono', monospace",
+  padding: 24,
+  fontFamily: "",
   customHeaderBg: "",
   customHeaderText: "",
   customRowBg: "",
@@ -48,24 +44,9 @@ const DEFAULT_STATE: AppState = {
     valueColumns: [1],
     showLegend: true,
     showValues: true,
-    bar: {
-      orientation: "vertical",
-      barStyle: "grouped",
-      barRadius: 3,
-      barGap: 2,
-    },
-    line: {
-      curveType: "smooth",
-      showArea: true,
-      showDots: true,
-      lineWidth: 2.5,
-    },
-    pie: {
-      innerRadius: 50,
-      labelPosition: "outside",
-      sortSlices: false,
-      startAngle: 0,
-    },
+    bar: { orientation: "vertical", barStyle: "grouped", barRadius: 3, barGap: 2 },
+    line: { curveType: "smooth", showArea: true, showDots: true, lineWidth: 2.5 },
+    pie: { innerRadius: 50, labelPosition: "outside", sortSlices: false, startAngle: 0 },
     customColors: {},
   },
 };
@@ -76,9 +57,10 @@ function loadState(): AppState {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Re-parse table data from raw input
-      parsed.tableData = detectAndParse(parsed.rawInput, parsed.inputFormat === "auto" ? undefined : parsed.inputFormat);
-      // Deep-merge chartConfig so new sub-configs (bar/line/pie) get defaults
+      parsed.tableData = detectAndParse(
+        parsed.rawInput,
+        parsed.inputFormat === "auto" ? undefined : parsed.inputFormat
+      );
       if (parsed.chartConfig) {
         parsed.chartConfig = {
           ...DEFAULT_STATE.chartConfig,
@@ -94,14 +76,11 @@ function loadState(): AppState {
   return DEFAULT_STATE;
 }
 
-const EXPORT_FORMATS: { id: ExportFormat; label: string; ext: string; icon: React.ReactNode }[] = [
-  { id: "png", label: "PNG Image", ext: "png", icon: <Image size={13} /> },
-  { id: "jpg", label: "JPG Image", ext: "jpg", icon: <Image size={13} /> },
-  { id: "svg", label: "SVG Image", ext: "svg", icon: <Image size={13} /> },
-  { id: "json", label: "JSON", ext: "json", icon: <FileJson size={13} /> },
-  { id: "csv", label: "CSV", ext: "csv", icon: <FileSpreadsheet size={13} /> },
-  { id: "markdown", label: "Markdown", ext: "md", icon: <FileText size={13} /> },
-  { id: "postgresql", label: "PostgreSQL", ext: "sql", icon: <Database size={13} /> },
+const VIZ_TABS: { mode: VisualizationMode; label: string }[] = [
+  { mode: "table", label: "Table" },
+  { mode: "bar", label: "Bar" },
+  { mode: "line", label: "Line" },
+  { mode: "pie", label: "Pie" },
 ];
 
 export default function Home() {
@@ -109,19 +88,15 @@ export default function Home() {
   const [hydrated, setHydrated] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [inputOpen, setInputOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
   const [colorMode, setColorMode] = useState<"dark" | "light">("dark");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const exportBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Load from localStorage on mount
   useEffect(() => {
     setState(loadState());
     setHydrated(true);
   }, []);
 
-  // Load color mode preference
   useEffect(() => {
     const saved = localStorage.getItem("pastepretty-color-mode");
     if (saved === "light" || saved === "dark") {
@@ -139,24 +114,34 @@ export default function Home() {
     });
   }, []);
 
-  // Auto-save to localStorage every second
   useEffect(() => {
     if (!hydrated) return;
     const timer = setInterval(() => {
       try {
-        const toSave = { ...state };
-        delete (toSave as Record<string, unknown>).tableData; // Don't save parsed data
+        const toSave = { ...state } as Record<string, unknown>;
+        delete toSave.tableData;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
       } catch {}
     }, 1000);
     return () => clearInterval(timer);
   }, [state, hydrated]);
 
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    if (sheetOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sheetOpen]);
+
   const handleChange = useCallback((patch: Partial<AppState>) => {
     setState((prev) => {
       const next = { ...prev, ...patch };
 
-      // When theme changes, reset background and custom colors
       if ("themeId" in patch && patch.themeId !== prev.themeId) {
         const newTheme = getTheme(patch.themeId!);
         next.background = { type: "gradient", gradient: newTheme.defaultBg };
@@ -170,10 +155,12 @@ export default function Home() {
       }
 
       if ("rawInput" in patch || "inputFormat" in patch) {
-        next.tableData = detectAndParse(next.rawInput, next.inputFormat === "auto" ? undefined : next.inputFormat);
+        next.tableData = detectAndParse(
+          next.rawInput,
+          next.inputFormat === "auto" ? undefined : next.inputFormat
+        );
       }
 
-      // When switching to a chart mode, check if data has numeric columns
       if ("vizMode" in patch && patch.vizMode !== "table" && prev.vizMode === "table") {
         const td = next.tableData;
         if (td) {
@@ -184,12 +171,16 @@ export default function Home() {
             })
           );
           if (!hasNumeric) {
-            // Swap to chart-friendly sample data
             next.rawInput = SAMPLE_CHART_MARKDOWN;
             next.tableData = detectAndParse(SAMPLE_CHART_MARKDOWN);
-            next.chartConfig = { ...next.chartConfig, labelColumn: 0, valueColumns: [1, 2, 3], showLegend: true, showValues: true };
+            next.chartConfig = {
+              ...next.chartConfig,
+              labelColumn: 0,
+              valueColumns: [1, 2, 3],
+              showLegend: true,
+              showValues: true,
+            };
           } else {
-            // Auto-select: first non-numeric col as label, numeric cols as values
             const numericCols = td.headers
               .map((_, ci) => ci)
               .filter((ci) =>
@@ -212,85 +203,40 @@ export default function Home() {
     });
   }, []);
 
-  const handleExportImage = useCallback(async (imgFormat: "png" | "jpg" | "svg") => {
-    if (!canvasRef.current) return;
-    setExporting(true);
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    try {
-      const opts = { pixelRatio: 2, cacheBust: true };
-      let dataUrl: string;
-      if (imgFormat === "jpg") {
-        dataUrl = await toJpeg(canvasRef.current, { ...opts, quality: 0.95 });
-      } else if (imgFormat === "svg") {
-        dataUrl = await toSvg(canvasRef.current, opts);
-      } else {
-        dataUrl = await toPng(canvasRef.current, opts);
-      }
-      const link = document.createElement("a");
-      link.download = `${sanitizeFilename(state.title, "pastepretty")}.${imgFormat}`;
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error("Export failed:", err);
-    } finally {
-      setExporting(false);
-    }
-  }, [state.title]);
-
   const handleExport = useCallback(
-    async (format: ExportFormat) => {
-      setExportOpen(false);
-      if (format === "png" || format === "jpg" || format === "svg") {
-        await handleExportImage(format);
-        return;
+    async (imgFormat: "png" | "jpg" | "svg" = "png") => {
+      if (!canvasRef.current) return;
+      setExporting(true);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      try {
+        const opts = { pixelRatio: 2, cacheBust: true };
+        let dataUrl: string;
+        if (imgFormat === "jpg") {
+          dataUrl = await toJpeg(canvasRef.current, { ...opts, quality: 0.95 });
+        } else if (imgFormat === "svg") {
+          dataUrl = await toSvg(canvasRef.current, opts);
+        } else {
+          dataUrl = await toPng(canvasRef.current, opts);
+        }
+        const link = document.createElement("a");
+        link.download = `${sanitizeFilename(state.title, "pastepretty")}.${imgFormat}`;
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error("Export failed:", err);
+      } finally {
+        setExporting(false);
       }
-      if (!state.tableData) return;
-      const content = exportData(state.tableData, format, state.title || "my_table");
-      const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `${sanitizeFilename(state.title, "pastepretty")}.${ext}`);
     },
-    [handleExportImage, state.tableData, state.title]
+    [state.title]
   );
 
-  const handleImportFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const text = ev.target?.result as string;
-        if (!text) return;
-        let format: string | undefined;
-        const name = file.name.toLowerCase();
-        if (name.endsWith(".json")) format = "json";
-        else if (name.endsWith(".csv")) format = "csv";
-        else if (name.endsWith(".md") || name.endsWith(".markdown")) format = "markdown";
-        else if (name.endsWith(".sql")) format = "postgresql";
-
-        setState((prev) => ({
-          ...prev,
-          rawInput: text,
-          inputFormat: "auto",
-          tableData: detectAndParse(text, format),
-        }));
-      };
-      reader.readAsText(file);
-      e.target.value = "";
-    },
-    []
-  );
-
-  // Handle inline cell edits from the table
   const handleCellEdit = useCallback((rowIndex: number, colIndex: number, value: string) => {
     setState((prev) => {
       if (!prev.tableData) return prev;
       const newRows = prev.tableData.rows.map((r) => [...r]);
       newRows[rowIndex][colIndex] = value;
-      const newData = { ...prev.tableData, rows: newRows };
-      // Rebuild rawInput from the edited data
-      const exportData2 = (await_import: typeof import("@/lib/exporters")) => exportData;
-      void exportData2;
-      return { ...prev, tableData: newData };
+      return { ...prev, tableData: { ...prev.tableData, rows: newRows } };
     });
   }, []);
 
@@ -303,153 +249,73 @@ export default function Home() {
     });
   }, []);
 
-  const vizTabs: { mode: VisualizationMode; icon: React.ReactNode; label: string }[] = [
-    { mode: "table", icon: <Table size={12} />, label: "Table" },
-    { mode: "bar", icon: <BarChart3 size={12} />, label: "Bar" },
-    { mode: "line", icon: <LineChart size={12} />, label: "Line" },
-    { mode: "pie", icon: <PieChart size={12} />, label: "Pie" },
-  ];
+  const isTransparent = state.background.type === "none";
+  const toggleTransparent = () => {
+    if (isTransparent) {
+      const t = getTheme(state.themeId);
+      handleChange({ background: { type: "gradient", gradient: t.defaultBg } });
+    } else {
+      handleChange({ background: { type: "none" } });
+    }
+  };
+
+  const tabs = (
+    <div className="viz-tabs" role="tablist" aria-label="Visualization mode">
+      {VIZ_TABS.map((t) => (
+        <button
+          key={t.mode}
+          role="tab"
+          aria-selected={state.vizMode === t.mode}
+          data-active={state.vizMode === t.mode}
+          className="viz-tab"
+          onClick={() => handleChange({ vizMode: t.mode })}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="app-shell">
-      {/* Top bar */}
-      <header className="app-topbar">
-        <div className="app-topbar-left">
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "var(--accent)" }}
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
-              <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
-              <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
-              <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
-              <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
-            </svg>
-          </div>
-          <span className="font-semibold text-[14px]" style={{ color: "var(--app-fg)" }}>
-            pastepretty
+      <header className="app-header">
+        <div className="app-header-left">
+          <span className="brand-mark">
+            <span className="brand-logomark" aria-hidden />
+            <span className="brand-org">goodylili</span>
+            <span className="brand-slash">/</span>
+            <span className="brand-name">pastepretty</span>
+            <span className="brand-version">V1</span>
           </span>
-          <span className="chrome-label" style={{ marginLeft: 4 }}>v1</span>
         </div>
 
-        <div className="app-topbar-right">
-          {vizTabs.map(({ mode, icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => handleChange({ vizMode: mode })}
-              className="tab-pill flex items-center gap-1.5"
-              data-active={state.vizMode === mode}
-            >
-              {icon}
-              <span className="nav-btn-label">{label}</span>
-            </button>
-          ))}
+        <div className="app-header-center">{tabs}</div>
 
-          <div className="w-px h-5 mx-1" style={{ background: "var(--app-border)" }} />
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json,.csv,.md,.markdown,.sql,.txt"
-            onChange={handleImportFile}
-            className="sr-only"
-          />
+        <div className="app-header-right">
           <button
-            onClick={() => fileRef.current?.click()}
-            className="tab-pill flex items-center gap-1.5"
-            title="Import file"
-          >
-            <Upload size={12} />
-            <span className="nav-btn-label">Import</span>
-          </button>
-
-          <button
-            onClick={() => setInputOpen(true)}
-            className="tab-pill flex items-center gap-1.5"
-            title="Edit table data"
-          >
-            <FileText size={12} />
-            <span className="nav-btn-label">Data</span>
-          </button>
-
-          <button
+            className="icon-btn"
             onClick={toggleColorMode}
-            className="flex items-center justify-center w-8 h-8 rounded-md transition-colors shrink-0"
-            style={{ border: "1px solid var(--app-border)", color: "var(--app-muted)" }}
-            title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={colorMode === "dark" ? "Switch to light" : "Switch to dark"}
           >
-            {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            {colorMode === "dark" ? <Sun size={14} strokeWidth={2} /> : <Moon size={14} strokeWidth={2} />}
           </button>
-
-          <div className="flex items-center" style={{ marginLeft: 4 }}>
-            <button
-              onClick={() => handleExport("png")}
-              disabled={exporting}
-              className="flex items-center gap-1.5 px-3 h-8 rounded-l-md text-[11px] font-semibold transition-all disabled:opacity-50"
-              style={{ background: "var(--app-fg)", color: "var(--app-bg)" }}
-            >
-              <Download size={12} />
-              {exporting ? "..." : "Export"}
-            </button>
-            <button
-              ref={exportBtnRef}
-              onClick={() => setExportOpen(!exportOpen)}
-              disabled={exporting}
-              className="flex items-center justify-center w-7 h-8 rounded-r-md transition-all disabled:opacity-50"
-              style={{
-                background: "var(--app-fg)",
-                color: "var(--app-bg)",
-                borderLeft: "1px solid rgba(0,0,0,0.15)",
-              }}
-            >
-              <ChevronDown size={12} style={{ opacity: 0.7 }} />
-            </button>
-
-            {exportOpen && createPortal(
-              <>
-                <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
-                <div
-                  className="rounded-lg overflow-hidden"
-                  style={{
-                    position: "fixed",
-                    top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
-                    right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
-                    zIndex: 9999,
-                    background: "var(--app-surface-2)",
-                    border: "1px solid var(--app-border)",
-                    minWidth: "180px",
-                    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                  }}
-                >
-                  {EXPORT_FORMATS.map((fmt) => (
-                    <button
-                      key={fmt.id}
-                      onClick={() => handleExport(fmt.id)}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
-                      style={{ color: "var(--app-fg)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--app-surface-3)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
-                      {fmt.label}
-                      <span className="ml-auto chrome-label">.{fmt.ext}</span>
-                    </button>
-                  ))}
-                </div>
-              </>,
-              document.body
-            )}
-          </div>
         </div>
       </header>
+
+      <div className="app-header-tabs-mobile">{tabs}</div>
 
       <div className="app-body">
         <aside className="app-sidebar">
           <ControlPanel state={state} onChange={handleChange} />
         </aside>
 
-        <main className="app-main">
+        <main className="app-canvas">
+          <div className="page-indicator" aria-hidden>
+            <span className="current">01</span>
+            <span>/</span>
+            <span>01</span>
+          </div>
+
           <PreviewCanvas
             ref={canvasRef}
             state={state}
@@ -458,7 +324,90 @@ export default function Home() {
             onCellEdit={handleCellEdit}
             onHeaderEdit={handleHeaderEdit}
           />
+
+          <div className="float-pill" role="toolbar" aria-label="Export controls">
+            <button
+              type="button"
+              className="pill-btn"
+              onClick={toggleTransparent}
+              aria-pressed={isTransparent}
+              title="Toggle transparent background"
+            >
+              <span
+                aria-hidden
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  border: "1px solid currentColor",
+                  display: "inline-block",
+                  background: isTransparent ? "currentColor" : "transparent",
+                }}
+              />
+              <span className="pill-label-md">Transparent</span>
+            </button>
+
+            <button
+              type="button"
+              className="pill-btn"
+              onClick={() => setInputOpen(true)}
+              title="Edit data"
+            >
+              <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>+</span>
+              <span className="pill-label-md">Data</span>
+            </button>
+
+            <button
+              type="button"
+              className="pill-btn pill-primary"
+              onClick={() => handleExport("png")}
+              disabled={exporting}
+            >
+              {exporting ? "Exporting…" : "Export"}
+            </button>
+          </div>
         </main>
+      </div>
+
+      {/* Mobile customize trigger */}
+      <button
+        type="button"
+        className="sheet-trigger"
+        onClick={() => setSheetOpen(true)}
+        aria-label="Customize"
+      >
+        Customize
+      </button>
+
+      {/* Mobile bottom sheet */}
+      <div
+        className="sheet-backdrop"
+        data-open={sheetOpen}
+        onClick={() => setSheetOpen(false)}
+        aria-hidden
+      />
+      <div
+        className="sheet"
+        data-open={sheetOpen}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Customize"
+      >
+        <div className="sheet-handle" aria-hidden />
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 16px" }}>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => setSheetOpen(false)}
+            aria-label="Close"
+            style={{ width: 28, height: 28, border: 0 }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+        <div className="sheet-body">
+          <ControlPanel state={state} onChange={handleChange} />
+        </div>
       </div>
 
       <InputDrawer
@@ -467,6 +416,12 @@ export default function Home() {
         state={state}
         onChange={handleChange}
       />
+
+      <style jsx>{`
+        @media (max-width: 480px) {
+          :global(.pill-label-md) { display: none; }
+        }
+      `}</style>
     </div>
   );
 }

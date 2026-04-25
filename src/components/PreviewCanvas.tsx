@@ -52,9 +52,9 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
       const container = containerRef.current;
       const content = contentRef.current;
 
-      // Available space (minus padding)
-      const padX = window.innerWidth < 640 ? 32 : 64; // p-4 or p-8
-      const padY = padX;
+      // Available space (canvas-stage padding: 50/40/100 desktop, 36/16/130 mobile)
+      const padX = window.innerWidth < 768 ? 32 : 80;
+      const padY = window.innerWidth < 768 ? 166 : 150;
       const availW = container.clientWidth - padX;
       const availH = container.clientHeight - padY;
 
@@ -93,11 +93,13 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
 
     if (!state.tableData) {
       return (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-5xl mb-4" style={{ opacity: 0.3 }}>T</div>
-            <p className="text-sm" style={{ color: "var(--text-subtle)" }}>
-              Paste JSON, CSV, Markdown, or PostgreSQL to preview
+        <div className="canvas-stage">
+          <div style={{ textAlign: "center", color: "var(--text-dim)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+              No data
+            </div>
+            <p style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
+              Paste JSON, CSV, Markdown, or PostgreSQL
             </p>
           </div>
         </div>
@@ -109,7 +111,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     return (
       <div
         ref={containerRef}
-        className="flex-1 flex items-center justify-center overflow-auto p-4 sm:p-8"
+        className="canvas-stage"
       >
         <div
           style={{
