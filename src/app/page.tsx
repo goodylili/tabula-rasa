@@ -26,6 +26,7 @@ const DEFAULT_STATE: AppState = {
   windowStyle: "mac",
   fontSize: 18,
   showGrid: true,
+  showColumnLines: false,
   stripedRows: true,
   highlightFirstRow: true,
   highlightFirstCol: true,

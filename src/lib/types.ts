@@ -81,6 +81,7 @@ export interface AppState {
   windowStyle: "mac" | "windows" | "none";
   fontSize: number;
   showGrid: boolean;
+  showColumnLines: boolean;
   stripedRows: boolean;
   highlightFirstRow: boolean;
   highlightFirstCol: boolean;

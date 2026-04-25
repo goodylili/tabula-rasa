@@ -151,6 +151,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
                   theme={theme}
                   fontSize={state.fontSize}
                   showGrid={state.showGrid}
+                  showColumnLines={state.showColumnLines}
                   stripedRows={state.stripedRows}
                   highlightFirstRow={state.highlightFirstRow}
                   highlightFirstCol={state.highlightFirstCol}

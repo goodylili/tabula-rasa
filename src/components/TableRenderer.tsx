@@ -129,6 +129,7 @@ interface TableRendererProps {
   theme: TableTheme;
   fontSize: number;
   showGrid: boolean;
+  showColumnLines?: boolean;
   stripedRows: boolean;
   highlightFirstRow?: boolean;
   highlightFirstCol?: boolean;
@@ -147,6 +148,7 @@ export default function TableRenderer({
   theme,
   fontSize,
   showGrid,
+  showColumnLines = false,
   stripedRows,
   highlightFirstRow = false,
   highlightFirstCol = false,
@@ -277,7 +279,7 @@ export default function TableRenderer({
       padding: "11px 18px",
       borderBottom: showGrid ? `1px solid ${theme.borderColor}` : "none",
       borderRight:
-        showGrid && ci < data.headers.length - 1
+        showColumnLines && ci < data.headers.length - 1
           ? `1px solid ${theme.borderColor}`
           : "none",
       whiteSpace: "nowrap" as const,
@@ -441,7 +443,7 @@ export default function TableRenderer({
             {interactive && showFilters && (
               <tr>
                 {showRowNumbers && (
-                  <th style={{ background: theme.rowBg, padding: "6px 12px", borderBottom: `1px solid ${theme.borderColor}`, borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none" }} />
+                  <th style={{ background: theme.rowBg, padding: "6px 12px", borderBottom: `1px solid ${theme.borderColor}`, borderRight: showColumnLines ? `1px solid ${theme.borderColor}` : "none" }} />
                 )}
                 {data.headers.map((_, i) => (
                   <th
@@ -453,7 +455,7 @@ export default function TableRenderer({
                       padding: "6px 12px",
                       borderBottom: `1px solid ${theme.borderColor}`,
                       borderRight:
-                        showGrid && i < data.headers.length - 1
+                        showColumnLines && i < data.headers.length - 1
                           ? `1px solid ${theme.borderColor}`
                           : "none",
                     }}
@@ -493,7 +495,7 @@ export default function TableRenderer({
                     fontWeight: 600,
                     fontSize: `${fontSize - 2}px`,
                     borderBottom: showGrid ? `2px solid ${theme.borderColor}` : "none",
-                    borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none",
+                    borderRight: showColumnLines ? `1px solid ${theme.borderColor}` : "none",
                     whiteSpace: "nowrap",
                     opacity: 0.6,
                   }}
@@ -519,7 +521,7 @@ export default function TableRenderer({
                       ? `2px solid ${theme.borderColor}`
                       : "none",
                     borderRight:
-                      showGrid && i < data.headers.length - 1
+                      showColumnLines && i < data.headers.length - 1
                         ? `1px solid ${theme.borderColor}`
                         : "none",
                     whiteSpace: "nowrap",
@@ -578,7 +580,7 @@ export default function TableRenderer({
                         fontSize: `${fontSize - 2}px`,
                         opacity: 0.4,
                         fontWeight: 500,
-                        borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none",
+                        borderRight: showColumnLines ? `1px solid ${theme.borderColor}` : "none",
                       }}
                     >
                       {ri + 1}

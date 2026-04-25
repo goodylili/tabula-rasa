@@ -720,8 +720,12 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
 
           <Divider />
 
-          <ControlGroup label="Grid">
+          <ControlGroup label="Row Lines">
             <Toggle on={state.showGrid} onToggle={() => onChange({ showGrid: !state.showGrid })} />
+          </ControlGroup>
+
+          <ControlGroup label="Column Lines">
+            <Toggle on={state.showColumnLines} onToggle={() => onChange({ showColumnLines: !state.showColumnLines })} />
           </ControlGroup>
 
           <ControlGroup label="Striped">
