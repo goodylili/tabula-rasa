@@ -110,8 +110,6 @@ export default function Home() {
   const [exporting, setExporting] = useState(false);
   const [inputOpen, setInputOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [controlsCollapsed, setControlsCollapsed] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
   const [colorMode, setColorMode] = useState<"dark" | "light">("dark");
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -121,15 +119,6 @@ export default function Home() {
   useEffect(() => {
     setState(loadState());
     setHydrated(true);
-  }, []);
-
-  // Track mobile breakpoint
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 768px)");
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
-    handler(mql);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
   }, []);
 
   // Load color mode preference
@@ -314,219 +303,163 @@ export default function Home() {
     });
   }, []);
 
+  const vizTabs: { mode: VisualizationMode; icon: React.ReactNode; label: string }[] = [
+    { mode: "table", icon: <Table size={12} />, label: "Table" },
+    { mode: "bar", icon: <BarChart3 size={12} />, label: "Bar" },
+    { mode: "line", icon: <LineChart size={12} />, label: "Line" },
+    { mode: "pie", icon: <PieChart size={12} />, label: "Pie" },
+  ];
+
   return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
-      {/* Header */}
-      <header className="shrink-0 pt-3 px-2 sm:px-4">
-        <div
-          className="app-card rounded-xl mx-auto"
-          style={{
-            background: "var(--panel-bg)",
-            border: "1px solid var(--panel-border)",
-          }}
-        >
-        {/* Navbar */}
-        <div
-          className="flex items-center justify-between px-5 mx-auto"
-          style={{ height: "52px" }}
-        >
-          {/* Left: Brand + Viz tabs */}
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2.5 shrink-0">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{
-                  background: "var(--accent)",
-                  boxShadow: "0 2px 8px rgba(110,86,207,0.25)",
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
-                  <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
-                  <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
-                  <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
-                  <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
-                </svg>
-              </div>
-              <span className="font-semibold text-[13px] tracking-tight nav-brand-text" style={{ color: "var(--foreground)" }}>
-                PastePretty
-              </span>
-            </div>
+    <div className="app-shell">
+      {/* Top bar */}
+      <header className="app-topbar">
+        <div className="app-topbar-left">
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: "var(--accent)" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="1" width="6" height="4" rx="1" fill="white" opacity="0.9" />
+              <rect x="9" y="1" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+              <rect x="1" y="7" width="6" height="4" rx="1" fill="white" opacity="0.6" />
+              <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
+              <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
+            </svg>
+          </div>
+          <span className="font-semibold text-[14px]" style={{ color: "var(--app-fg)" }}>
+            pastepretty
+          </span>
+          <span className="chrome-label" style={{ marginLeft: 4 }}>v1</span>
+        </div>
 
-            <div className="w-px h-5 header-separator" style={{ background: "var(--border-subtle)" }} />
+        <div className="app-topbar-right">
+          {vizTabs.map(({ mode, icon, label }) => (
+            <button
+              key={mode}
+              onClick={() => handleChange({ vizMode: mode })}
+              className="tab-pill flex items-center gap-1.5"
+              data-active={state.vizMode === mode}
+            >
+              {icon}
+              <span className="nav-btn-label">{label}</span>
+            </button>
+          ))}
 
-            {/* Viz mode tabs */}
-            <div className="flex items-center gap-0.5 viz-tabs">
-              {([
-                { mode: "table" as VisualizationMode, icon: <Table size={13} />, label: "Table" },
-                { mode: "bar" as VisualizationMode, icon: <BarChart3 size={13} />, label: "Bar" },
-                { mode: "line" as VisualizationMode, icon: <LineChart size={13} />, label: "Line" },
-                { mode: "pie" as VisualizationMode, icon: <PieChart size={13} />, label: "Pie" },
-              ]).map(({ mode, icon, label }) => (
-                <button
-                  key={mode}
-                  onClick={() => handleChange({ vizMode: mode })}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+          <div className="w-px h-5 mx-1" style={{ background: "var(--app-border)" }} />
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,.csv,.md,.markdown,.sql,.txt"
+            onChange={handleImportFile}
+            className="sr-only"
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="tab-pill flex items-center gap-1.5"
+            title="Import file"
+          >
+            <Upload size={12} />
+            <span className="nav-btn-label">Import</span>
+          </button>
+
+          <button
+            onClick={() => setInputOpen(true)}
+            className="tab-pill flex items-center gap-1.5"
+            title="Edit table data"
+          >
+            <FileText size={12} />
+            <span className="nav-btn-label">Data</span>
+          </button>
+
+          <button
+            onClick={toggleColorMode}
+            className="flex items-center justify-center w-8 h-8 rounded-md transition-colors shrink-0"
+            style={{ border: "1px solid var(--app-border)", color: "var(--app-muted)" }}
+            title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {colorMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+
+          <div className="flex items-center" style={{ marginLeft: 4 }}>
+            <button
+              onClick={() => handleExport("png")}
+              disabled={exporting}
+              className="flex items-center gap-1.5 px-3 h-8 rounded-l-md text-[11px] font-semibold transition-all disabled:opacity-50"
+              style={{ background: "var(--app-fg)", color: "var(--app-bg)" }}
+            >
+              <Download size={12} />
+              {exporting ? "..." : "Export"}
+            </button>
+            <button
+              ref={exportBtnRef}
+              onClick={() => setExportOpen(!exportOpen)}
+              disabled={exporting}
+              className="flex items-center justify-center w-7 h-8 rounded-r-md transition-all disabled:opacity-50"
+              style={{
+                background: "var(--app-fg)",
+                color: "var(--app-bg)",
+                borderLeft: "1px solid rgba(0,0,0,0.15)",
+              }}
+            >
+              <ChevronDown size={12} style={{ opacity: 0.7 }} />
+            </button>
+
+            {exportOpen && createPortal(
+              <>
+                <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
+                <div
+                  className="rounded-lg overflow-hidden"
                   style={{
-                    background: state.vizMode === mode ? "var(--surface-active)" : "transparent",
-                    color: state.vizMode === mode ? "var(--foreground)" : "var(--text-muted)",
-                    boxShadow: state.vizMode === mode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (state.vizMode !== mode) e.currentTarget.style.background = "var(--surface)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (state.vizMode !== mode) e.currentTarget.style.background = "transparent";
+                    position: "fixed",
+                    top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
+                    right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
+                    zIndex: 9999,
+                    background: "var(--app-surface-2)",
+                    border: "1px solid var(--app-border)",
+                    minWidth: "180px",
+                    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
                   }}
                 >
-                  {icon}
-                  <span className="nav-btn-label">{label}</span>
-                </button>
-              ))}
-            </div>
+                  {EXPORT_FORMATS.map((fmt) => (
+                    <button
+                      key={fmt.id}
+                      onClick={() => handleExport(fmt.id)}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
+                      style={{ color: "var(--app-fg)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--app-surface-3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
+                      {fmt.label}
+                      <span className="ml-auto chrome-label">.{fmt.ext}</span>
+                    </button>
+                  ))}
+                </div>
+              </>,
+              document.body
+            )}
           </div>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-1.5 header-actions">
-            <button
-              onClick={toggleColorMode}
-              className="flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0"
-              style={{
-                background: "transparent",
-                color: "var(--text-muted)",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {colorMode === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
-
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".json,.csv,.md,.markdown,.sql,.txt"
-              onChange={handleImportFile}
-              className="sr-only"
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                background: "transparent",
-                color: "var(--text-muted)",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              title="Import file"
-            >
-              <Upload size={13} />
-              <span className="nav-btn-label">Import</span>
-            </button>
-
-            <button
-              onClick={() => setInputOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                background: "transparent",
-                color: "var(--text-muted)",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              title="Edit table data"
-            >
-              <FileText size={13} />
-              <span className="nav-btn-label">Edit Data</span>
-            </button>
-
-            <div className="flex items-center ml-1">
-              <button
-                onClick={() => handleExport("png")}
-                disabled={exporting}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-l-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
-                style={{ background: "var(--accent)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
-              >
-                <Download size={13} />
-                {exporting ? "..." : "Export"}
-              </button>
-              <button
-                ref={exportBtnRef}
-                onClick={() => setExportOpen(!exportOpen)}
-                disabled={exporting}
-                className="flex items-center py-1.5 px-1.5 rounded-r-lg text-white transition-all disabled:opacity-50"
-                style={{
-                  background: "var(--accent)",
-                  borderLeft: "1px solid rgba(255,255,255,0.2)",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
-              >
-                <ChevronDown size={12} style={{ opacity: 0.7 }} />
-              </button>
-
-              {exportOpen && createPortal(
-                <>
-                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setExportOpen(false)} />
-                  <div
-                    className="rounded-xl overflow-hidden"
-                    style={{
-                      position: "fixed",
-                      top: exportBtnRef.current ? exportBtnRef.current.getBoundingClientRect().bottom + 8 : 0,
-                      right: exportBtnRef.current ? window.innerWidth - exportBtnRef.current.getBoundingClientRect().right : 0,
-                      zIndex: 9999,
-                      background: "var(--elevated-bg)",
-                      border: "1px solid var(--border)",
-                      minWidth: "180px",
-                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                      backdropFilter: "none",
-                      WebkitBackdropFilter: "none",
-                    }}
-                  >
-                    {EXPORT_FORMATS.map((fmt) => (
-                      <button
-                        key={fmt.id}
-                        onClick={() => handleExport(fmt.id)}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors text-left"
-                        style={{ color: "var(--text-primary)" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                      >
-                        <span style={{ opacity: 0.6 }}>{fmt.icon}</span>
-                        {fmt.label}
-                        <span className="ml-auto" style={{ color: "var(--text-subtle)", fontSize: "10px" }}>
-                          .{fmt.ext}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </>,
-                document.body
-              )}
-            </div>
-          </div>
-        </div>
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-hidden flex relative">
-        <PreviewCanvas
-          ref={canvasRef}
-          state={state}
-          exporting={exporting}
-          colorMode={colorMode}
-          onCellEdit={handleCellEdit}
-          onHeaderEdit={handleHeaderEdit}
-        />
-      </main>
+      <div className="app-body">
+        <aside className="app-sidebar">
+          <ControlPanel state={state} onChange={handleChange} />
+        </aside>
 
-      <ControlPanel
-        state={state}
-        onChange={handleChange}
-        collapsed={isMobile ? controlsCollapsed : undefined}
-        onToggleCollapse={isMobile ? () => setControlsCollapsed((c) => !c) : undefined}
-      />
+        <main className="app-main">
+          <PreviewCanvas
+            ref={canvasRef}
+            state={state}
+            exporting={exporting}
+            colorMode={colorMode}
+            onCellEdit={handleCellEdit}
+            onHeaderEdit={handleHeaderEdit}
+          />
+        </main>
+      </div>
 
       <InputDrawer
         open={inputOpen}

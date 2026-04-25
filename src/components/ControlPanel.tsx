@@ -12,8 +12,6 @@ import { generateChartColors } from "./ChartRenderer";
 interface ControlPanelProps {
   state: AppState;
   onChange: (patch: Partial<AppState>) => void;
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
 }
 
 function ControlLabel({ children }: { children: React.ReactNode }) {
@@ -35,6 +33,15 @@ function ControlGroup({ children, label }: { children: React.ReactNode; label: s
         {children}
       </div>
     </div>
+  );
+}
+
+function Section({ legend, children }: { legend: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="cp-section">
+      <legend>{legend}</legend>
+      <div className="control-row">{children}</div>
+    </fieldset>
   );
 }
 
@@ -472,7 +479,7 @@ function ColorPopover({
   );
 }
 
-export default function ControlPanel({ state, onChange, collapsed, onToggleCollapse }: ControlPanelProps) {
+export default function ControlPanel({ state, onChange }: ControlPanelProps) {
   const colorRef = useRef<HTMLInputElement>(null);
   const bgImageRef = useRef<HTMLInputElement>(null);
   const currentTheme = getTheme(state.themeId);
@@ -553,8 +560,8 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
 
   const panelContent = (
     <>
-      {/* Row 1: Appearance */}
-      <div className="control-row">
+      {/* Section: Appearance */}
+      <Section legend="Appearance">
         <ControlGroup label="Theme">
           <Dropdown
             value={state.themeId}
@@ -650,11 +657,11 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             }}
           />
         </ControlGroup>
-      </div>
+      </Section>
 
-      {/* Row 2: Layout & Toggles (table mode) OR Chart config */}
+      {/* Section: Layout & Toggles (table mode) OR Chart config */}
       {state.vizMode === "table" ? (
-        <div className="control-row">
+        <Section legend="Layout">
           <ControlGroup label="Window">
             <SegmentToggle
               values={["mac", "windows", "none"]}
@@ -743,11 +750,11 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
           <ControlGroup label="Row #">
             <Toggle on={state.showRowNumbers} onToggle={() => onChange({ showRowNumbers: !state.showRowNumbers })} />
           </ControlGroup>
-        </div>
+        </Section>
       ) : (
         <>
-          {/* Row 2: Data mapping + shared controls */}
-          <div className="control-row">
+          {/* Section: Data mapping + shared controls */}
+          <Section legend="Data">
             <ControlGroup label="Labels">
               <Dropdown
                 value={String(state.chartConfig.labelColumn)}
@@ -813,10 +820,10 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
             <ControlGroup label="Values">
               <Toggle on={state.chartConfig.showValues} onToggle={() => updateChartConfig({ showValues: !state.chartConfig.showValues })} />
             </ControlGroup>
-          </div>
+          </Section>
 
-          {/* Row 3: Chart-type-specific controls */}
-          <div className="control-row">
+          {/* Section: Chart-type-specific controls */}
+          <Section legend="Chart">
             {state.vizMode === "bar" && (
               <>
                 <ControlGroup label="Direction">
@@ -936,45 +943,15 @@ export default function ControlPanel({ state, onChange, collapsed, onToggleColla
                 </ControlGroup>
               </>
             )}
-          </div>
+          </Section>
         </>
       )}
     </>
   );
 
   return (
-    <div className="shrink-0 pb-4 px-2 sm:px-4">
-      <div
-        className="panel-glow control-panel-grid app-card px-3 sm:px-5 py-3.5 rounded-xl mx-auto"
-        style={{
-          background: "var(--panel-bg)",
-          border: "1px solid var(--panel-border)",
-          boxShadow: "none",
-        }}
-      >
-        {/* Mobile toggle bar */}
-        {onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            className="control-panel-toggle flex items-center justify-between w-full text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            <span>Controls</span>
-            <ChevronDown
-              size={14}
-              style={{
-                transform: collapsed ? "rotate(0deg)" : "rotate(180deg)",
-                transition: "transform 0.2s",
-              }}
-            />
-          </button>
-        )}
-
-        {/* Panel content — hidden when collapsed on mobile */}
-        <div className={collapsed ? "control-panel-content collapsed" : "control-panel-content"}>
-          {panelContent}
-        </div>
-      </div>
+    <div className="cp-sidebar">
+      {panelContent}
     </div>
   );
 }

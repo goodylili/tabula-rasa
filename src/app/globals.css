@@ -126,6 +126,167 @@ body {
   max-width: 1200px;
 }
 
+/* ── App shell tokens (top bar + sidebar layout) ─────────────── */
+:root {
+  --app-bg: hsl(0, 0%, 4%);
+  --app-surface: hsl(0, 0%, 3%);
+  --app-surface-2: hsl(240, 4%, 7%);
+  --app-surface-3: hsl(240, 4%, 11%);
+  --app-border: hsl(240, 4%, 16%);
+  --app-border-2: hsl(240, 5%, 27%);
+  --app-fg: hsl(0, 0%, 93%);
+  --app-muted: hsl(240, 4%, 65%);
+  --app-muted-2: hsl(240, 4%, 47%);
+}
+[data-theme="light"] {
+  --app-bg: hsl(0, 0%, 100%);
+  --app-surface: hsl(0, 0%, 98%);
+  --app-surface-2: hsl(240, 5%, 96%);
+  --app-surface-3: hsl(240, 5%, 89%);
+  --app-border: hsl(240, 5%, 90%);
+  --app-border-2: hsl(240, 5%, 84%);
+  --app-fg: hsl(240, 6%, 10%);
+  --app-muted: hsl(240, 4%, 36%);
+  --app-muted-2: hsl(240, 4%, 47%);
+}
+
+/* App shell */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  overflow: hidden;
+}
+.app-topbar {
+  flex-shrink: 0;
+  height: 56px;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  gap: 16px;
+}
+.app-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.app-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-sidebar {
+  width: 360px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--app-border);
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--app-surface);
+}
+@media (min-width: 1280px) {
+  .app-sidebar { width: 400px; }
+}
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+}
+
+/* Mono uppercase chrome label */
+.chrome-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--app-muted);
+}
+
+/* Top bar tab pill */
+.tab-pill {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--app-border);
+  color: var(--app-muted);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.tab-pill:hover {
+  color: var(--app-fg);
+  border-color: var(--app-border-2);
+}
+.tab-pill[data-active="true"] {
+  background: var(--app-fg);
+  color: var(--app-bg);
+  border-color: var(--app-fg);
+}
+
+/* Sidebar fieldsets */
+.cp-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.cp-section {
+  border: 0;
+  margin: 0;
+  padding: 16px 0 0 0;
+  border-top: 1px solid var(--app-border);
+}
+.cp-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.cp-section > legend {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--app-muted);
+  padding: 0;
+  margin-bottom: 12px;
+  float: left;
+  width: 100%;
+}
+.cp-section > legend + * { clear: both; }
+
+/* Override the horizontal control-row to vertical inside the sidebar */
+.cp-sidebar .control-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  flex-wrap: nowrap;
+  overflow: visible;
+  padding: 0;
+}
+.cp-sidebar .control-row > .shrink-0,
+.cp-sidebar .control-row > div {
+  flex-shrink: 1;
+}
+/* Hide vertical dividers inside the sidebar */
+.cp-sidebar .control-row > div[class*="self-stretch"] {
+  display: none;
+}
+
 /* Control panel layout */
 .control-panel-grid {
   display: flex;
