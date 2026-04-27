@@ -219,6 +219,30 @@ export function Select({
   );
 }
 
+/* ─── Text input ────────────────────────────────────────── */
+export function TextInput({
+  value,
+  onChange,
+  placeholder,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <input
+      type="text"
+      className="cp-text-input"
+      value={value}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
 /* ─── Color swatch ──────────────────────────────────────── */
 export function Swatch({
   color,

@@ -87,6 +87,7 @@ export default function Home() {
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"png" | "jpg" | "svg">("png");
   const [inputOpen, setInputOpen] = useState(false);
   const [colorMode, setColorMode] = useState<"dark" | "light">("dark");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -357,14 +358,27 @@ export default function Home() {
               <span className="pill-label-md">Data</span>
             </button>
 
-            <button
-              type="button"
-              className="pill-btn pill-primary"
-              onClick={() => handleExport("png")}
-              disabled={exporting}
-            >
-              {exporting ? "Exporting…" : "Export"}
-            </button>
+            <div className="pill-export-group">
+              <select
+                className="pill-format"
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as "png" | "jpg" | "svg")}
+                aria-label="Export format"
+                disabled={exporting}
+              >
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="svg">SVG</option>
+              </select>
+              <button
+                type="button"
+                className="pill-btn pill-primary"
+                onClick={() => handleExport(exportFormat)}
+                disabled={exporting}
+              >
+                {exporting ? "Exporting…" : "Export"}
+              </button>
+            </div>
           </div>
         </main>
       </div>

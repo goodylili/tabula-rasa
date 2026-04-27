@@ -2,10 +2,11 @@
 
 import React from "react";
 import { AppState, Background } from "@/lib/types";
-import { themes } from "@/lib/themes";
+import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
-import { Section, Field, Segmented, Switch, Slider, Select, Swatch } from "./ui/Primitives";
+import { Section, Field, Segmented, Switch, Slider, Select, Swatch, TextInput } from "./ui/Primitives";
+import { generateChartColors } from "./ChartRenderer";
 
 type BgKind = "preset" | "solid" | "gradient" | "none";
 
@@ -107,6 +108,15 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
   return (
     <div className="cp">
       <Section title="Appearance">
+        <Field label="Title">
+          <TextInput
+            value={state.title}
+            onChange={(v) => onChange({ title: v })}
+            placeholder="Untitled"
+            ariaLabel="Title"
+          />
+        </Field>
+
         <Field label="Theme">
           <Select value={state.themeId} options={themeOpts} onChange={(v) => onChange({ themeId: v })} />
         </Field>
@@ -209,13 +219,15 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
             ariaLabel="Row background"
           />
         </Field>
-        <Field label="Alt row bg" inline>
-          <Swatch
-            color={state.customAltRowBg || "#0a0a0a"}
-            onChange={(v) => onChange({ customAltRowBg: v })}
-            ariaLabel="Alternate row background"
-          />
-        </Field>
+        {!isChart && (
+          <Field label="Alt row bg" inline>
+            <Swatch
+              color={state.customAltRowBg || "#0a0a0a"}
+              onChange={(v) => onChange({ customAltRowBg: v })}
+              ariaLabel="Alternate row background"
+            />
+          </Field>
+        )}
         <Field label="Row text" inline>
           <Swatch
             color={state.customRowText || "#ffffff"}
@@ -350,6 +362,128 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
           </Field>
         </Section>
       )}
+
+      {isChart && state.tableData && (
+        <Section title="Data mapping">
+          <Field label="Label column">
+            <Select
+              value={String(state.chartConfig.labelColumn)}
+              options={state.tableData.headers.map((h, i) => ({
+                value: String(i),
+                label: h || `Column ${i + 1}`,
+              }))}
+              onChange={(v) =>
+                onChange({
+                  chartConfig: { ...state.chartConfig, labelColumn: Number(v) },
+                })
+              }
+            />
+          </Field>
+          <Field label={state.vizMode === "pie" ? "Value column" : "Value columns"}>
+            <div className="cp-chips">
+              {state.tableData.headers.map((h, i) => {
+                if (i === state.chartConfig.labelColumn) return null;
+                const active = state.chartConfig.valueColumns.includes(i);
+                const label = h || `Column ${i + 1}`;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    className="cp-chip"
+                    data-active={active}
+                    onClick={() => {
+                      let next: number[];
+                      if (state.vizMode === "pie") {
+                        next = [i];
+                      } else if (active) {
+                        next = state.chartConfig.valueColumns.filter((c) => c !== i);
+                        if (next.length === 0) next = [i];
+                      } else {
+                        next = [...state.chartConfig.valueColumns, i].sort((a, b) => a - b);
+                      }
+                      onChange({
+                        chartConfig: {
+                          ...state.chartConfig,
+                          valueColumns: next,
+                          customColors: {},
+                        },
+                      });
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+        </Section>
+      )}
+
+      {isChart && state.tableData && (() => {
+        const baseTheme = getTheme(state.themeId);
+        const data = state.tableData;
+        const isPie = state.vizMode === "pie";
+        const items: { key: string; label: string }[] = isPie
+          ? data.rows.map((row) => {
+              const v = row[state.chartConfig.labelColumn] || "";
+              return { key: v, label: v || "(empty)" };
+            })
+          : state.chartConfig.valueColumns.map((ci) => {
+              const name = data.headers[ci] || `Column ${ci + 1}`;
+              return { key: name, label: name };
+            });
+        const auto = generateChartColors(baseTheme, items.length);
+        const custom = state.chartConfig.customColors || {};
+        const hasCustom = items.some((it) => custom[it.key]);
+        return (
+          <Section title={isPie ? "Slice colors" : "Series colors"}>
+            {items.map((it, i) => (
+              <div key={it.key + i} className="cp-color-row">
+                <span className="cp-color-row-label" title={it.label}>{it.label}</span>
+                <Swatch
+                  color={custom[it.key] || auto[i]}
+                  onChange={(v) =>
+                    onChange({
+                      chartConfig: {
+                        ...state.chartConfig,
+                        customColors: { ...custom, [it.key]: v },
+                      },
+                    })
+                  }
+                  ariaLabel={`Color for ${it.label}`}
+                />
+              </div>
+            ))}
+            {hasCustom && (
+              <button
+                type="button"
+                className="seg-btn"
+                style={{
+                  alignSelf: "flex-start",
+                  padding: "6px 12px",
+                  border: "0.5px solid var(--border-strong)",
+                  borderRadius: 6,
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  marginTop: 4,
+                }}
+                onClick={() =>
+                  onChange({
+                    chartConfig: { ...state.chartConfig, customColors: {} },
+                  })
+                }
+              >
+                Reset
+              </button>
+            )}
+          </Section>
+        );
+      })()}
 
       {state.vizMode === "bar" && (
         <Section title="Bar chart">
@@ -503,6 +637,20 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
                 })
               }
               ariaLabel="Sort slices"
+            />
+          </Field>
+          <Field label="Start angle">
+            <Slider
+              value={state.chartConfig.pie.startAngle}
+              min={0}
+              max={355}
+              step={5}
+              onChange={(v) =>
+                onChange({
+                  chartConfig: { ...state.chartConfig, pie: { ...state.chartConfig.pie, startAngle: v } },
+                })
+              }
+              format={(v) => `${v}°`}
             />
           </Field>
         </Section>

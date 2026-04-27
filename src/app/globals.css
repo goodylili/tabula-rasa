@@ -394,6 +394,34 @@ button { font-family: inherit; }
   .pill-primary:hover { background: #fff; color: #000; }
 }
 
+.pill-export-group {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+}
+.pill-export-group .pill-format {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 10px;
+  cursor: pointer;
+  border-right: 0.5px solid var(--border-strong);
+  outline: none;
+}
+.pill-export-group .pill-format:hover { color: var(--text); }
+.pill-export-group .pill-format:disabled { opacity: 0.5; cursor: default; }
+.pill-export-group .pill-btn { border-radius: 0; }
+.pill-export-group .pill-primary {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
 /* ─── Sidebar primitives ───────────────────────────────── */
 .cp {
   display: flex;
@@ -537,6 +565,67 @@ button { font-family: inherit; }
 }
 
 /* select (custom) */
+.cp-text-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cp-text-input::placeholder { color: var(--text-dim); }
+@media (hover: hover) {
+  .cp-text-input:hover { border-color: var(--border-stronger); }
+}
+.cp-text-input:focus { border-color: var(--text-muted); }
+
+.cp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cp-chip[data-active="true"] {
+  color: var(--text);
+  border-color: var(--text-muted);
+  background: var(--surface-2);
+}
+
+.cp-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+.cp-color-row-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
 .sel {
   position: relative;
   width: 100%;
