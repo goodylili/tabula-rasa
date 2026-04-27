@@ -386,12 +386,12 @@ button { font-family: inherit; }
 
 .pill-primary {
   background: var(--text);
-  color: #000;
+  color: var(--bg);
   font-weight: 500;
   padding: 8px 16px;
 }
 @media (hover: hover) {
-  .pill-primary:hover { background: #fff; color: #000; }
+  .pill-primary:hover { background: var(--text); color: var(--bg); filter: brightness(1.1); }
 }
 
 .pill-export-group {
@@ -491,7 +491,7 @@ button { font-family: inherit; }
 }
 .seg-btn[data-active="true"] {
   background: var(--text);
-  color: #000;
+  color: var(--bg);
   font-weight: 500;
 }
 
@@ -519,7 +519,7 @@ button { font-family: inherit; }
 }
 .sw[data-on="true"] .sw-thumb {
   transform: translateX(14px);
-  background: #000;
+  background: var(--bg);
 }
 /* expanded tap area (mobile) */
 .sw::before {
