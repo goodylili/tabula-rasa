@@ -89,10 +89,13 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
 
   const handleBgChange = (label: string) => {
     const preset = presetBackgrounds.find((b) => b.label === label);
-    if (preset) onChange({ background: preset.bg });
+    if (preset) {
+      setBgKindOverride("preset");
+      onChange({ background: preset.bg });
+    }
   };
 
-  const bgKind: BgKind =
+  const derivedBgKind: BgKind =
     state.background.type === "none"
       ? "none"
       : currentBgLabel
@@ -102,6 +105,9 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
       : state.background.type === "gradient"
       ? "gradient"
       : "preset";
+
+  const [bgKindOverride, setBgKindOverride] = React.useState<BgKind | null>(null);
+  const bgKind: BgKind = bgKindOverride ?? derivedBgKind;
 
   const isChart = state.vizMode !== "table";
 
@@ -131,6 +137,7 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
               { value: "none", label: "None" },
             ]}
             onChange={(kind) => {
+              setBgKindOverride(kind);
               if (kind === "none") {
                 onChange({ background: { type: "none" } });
               } else if (kind === "solid") {
