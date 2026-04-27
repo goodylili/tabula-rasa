@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { toPng, toJpeg, toSvg } from "html-to-image";
 import { AppState, VisualizationMode } from "@/lib/types";
 import { detectAndParse, SAMPLE_MARKDOWN, SAMPLE_CHART_MARKDOWN } from "@/lib/parser";
-import { sanitizeFilename } from "@/lib/exporters";
+import { exportImage } from "@/lib/exportImage";
 import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
@@ -49,6 +48,8 @@ const DEFAULT_STATE: AppState = {
     pie: { innerRadius: 50, labelPosition: "outside", sortSlices: false, startAngle: 0 },
     customColors: {},
   },
+  exportFormat: "png",
+  exportScale: 2,
 };
 
 function loadState(): AppState {
@@ -87,11 +88,15 @@ export default function Home() {
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"png" | "jpg" | "svg">("png");
   const [inputOpen, setInputOpen] = useState(false);
   const [colorMode, setColorMode] = useState<"dark" | "light">("dark");
   const [sheetOpen, setSheetOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
+  const setCanvasRef = useCallback((node: HTMLDivElement | null) => {
+    canvasRef.current = node;
+    setCanvasEl(node);
+  }, []);
 
   useEffect(() => {
     setState(loadState());
@@ -204,33 +209,23 @@ export default function Home() {
     });
   }, []);
 
-  const handleExport = useCallback(
-    async (imgFormat: "png" | "jpg" | "svg" = "png") => {
-      if (!canvasRef.current) return;
-      setExporting(true);
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      try {
-        const opts = { pixelRatio: 2, cacheBust: true };
-        let dataUrl: string;
-        if (imgFormat === "jpg") {
-          dataUrl = await toJpeg(canvasRef.current, { ...opts, quality: 0.95 });
-        } else if (imgFormat === "svg") {
-          dataUrl = await toSvg(canvasRef.current, opts);
-        } else {
-          dataUrl = await toPng(canvasRef.current, opts);
-        }
-        const link = document.createElement("a");
-        link.download = `${sanitizeFilename(state.title, "pastepretty")}.${imgFormat}`;
-        link.href = dataUrl;
-        link.click();
-      } catch (err) {
-        console.error("Export failed:", err);
-      } finally {
-        setExporting(false);
-      }
-    },
-    [state.title]
-  );
+  const handleExport = useCallback(async () => {
+    if (!canvasRef.current) return;
+    setExporting(true);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    try {
+      await exportImage({
+        node: canvasRef.current,
+        format: state.exportFormat,
+        scale: state.exportScale,
+        filename: state.title,
+      });
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [state.title, state.exportFormat, state.exportScale]);
 
   const handleCellEdit = useCallback((rowIndex: number, colIndex: number, value: string) => {
     setState((prev) => {
@@ -307,7 +302,13 @@ export default function Home() {
 
       <div className="app-body">
         <aside className="app-sidebar">
-          <ControlPanel state={state} onChange={handleChange} />
+          <ControlPanel
+            state={state}
+            onChange={handleChange}
+            canvasNode={canvasEl}
+            onExport={handleExport}
+            exporting={exporting}
+          />
         </aside>
 
         <main className="app-canvas">
@@ -318,7 +319,7 @@ export default function Home() {
           </div>
 
           <PreviewCanvas
-            ref={canvasRef}
+            ref={setCanvasRef}
             state={state}
             exporting={exporting}
             colorMode={colorMode}
@@ -358,27 +359,17 @@ export default function Home() {
               <span className="pill-label-md">Data</span>
             </button>
 
-            <div className="pill-export-group">
-              <select
-                className="pill-format"
-                value={exportFormat}
-                onChange={(e) => setExportFormat(e.target.value as "png" | "jpg" | "svg")}
-                aria-label="Export format"
-                disabled={exporting}
-              >
-                <option value="png">PNG</option>
-                <option value="jpg">JPG</option>
-                <option value="svg">SVG</option>
-              </select>
-              <button
-                type="button"
-                className="pill-btn pill-primary"
-                onClick={() => handleExport(exportFormat)}
-                disabled={exporting}
-              >
-                {exporting ? "Exporting…" : "Export"}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="pill-btn pill-primary"
+              onClick={() => handleExport()}
+              disabled={exporting}
+              title={`Export as ${state.exportFormat.toUpperCase()}${state.exportFormat !== "svg" ? ` @ ${state.exportScale}×` : ""}`}
+            >
+              {exporting
+                ? "Exporting…"
+                : `Export ${state.exportFormat.toUpperCase()}${state.exportFormat !== "svg" && state.exportFormat !== "pdf" ? ` ${state.exportScale}×` : ""}`}
+            </button>
           </div>
         </main>
       </div>
@@ -420,7 +411,13 @@ export default function Home() {
           </button>
         </div>
         <div className="sheet-body">
-          <ControlPanel state={state} onChange={handleChange} />
+          <ControlPanel
+            state={state}
+            onChange={handleChange}
+            canvasNode={canvasEl}
+            onExport={handleExport}
+            exporting={exporting}
+          />
         </div>
       </div>
 

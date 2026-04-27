@@ -101,4 +101,7 @@ export interface AppState {
   // Visualization
   vizMode: VisualizationMode;
   chartConfig: ChartConfig;
+  // Export
+  exportFormat: "png" | "jpg" | "webp" | "svg" | "pdf";
+  exportScale: 1 | 2 | 4 | 8;
 }

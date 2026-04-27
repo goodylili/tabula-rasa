@@ -7,6 +7,7 @@ import { presetBackgrounds } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
 import { Section, Field, Segmented, Switch, Slider, Select, Swatch, TextInput } from "./ui/Primitives";
 import { generateChartColors } from "./ChartRenderer";
+import { IMAGE_FORMATS, IMAGE_SCALES, formatSupportsScale, computeOutputSize } from "@/lib/exportImage";
 
 type BgKind = "preset" | "solid" | "gradient" | "none";
 
@@ -66,6 +67,9 @@ function GradientStops({
 interface ControlPanelProps {
   state: AppState;
   onChange: (patch: Partial<AppState>) => void;
+  canvasNode?: HTMLElement | null;
+  onExport?: () => void;
+  exporting?: boolean;
 }
 
 const WINDOW_OPTS = [
@@ -74,7 +78,7 @@ const WINDOW_OPTS = [
   { value: "none", label: "None" },
 ] as const;
 
-export default function ControlPanel({ state, onChange }: ControlPanelProps) {
+export default function ControlPanel({ state, onChange, canvasNode, onExport, exporting }: ControlPanelProps) {
   const themeOpts = themes.map((t) => ({ value: t.id, label: t.name, group: t.group }));
   const bgOpts = presetBackgrounds.map((b) => ({ value: b.label, label: b.label }));
   const fontOpts = FONT_OPTIONS.map((f) => ({ value: f.id, label: f.label }));
@@ -681,6 +685,93 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
           </Field>
         </Section>
       )}
+
+      <ExportSection
+        state={state}
+        onChange={onChange}
+        canvasNode={canvasNode}
+        onExport={onExport}
+        exporting={exporting}
+      />
     </div>
+  );
+}
+
+function ExportSection({
+  state,
+  onChange,
+  canvasNode,
+  onExport,
+  exporting,
+}: {
+  state: AppState;
+  onChange: (patch: Partial<AppState>) => void;
+  canvasNode?: HTMLElement | null;
+  onExport?: () => void;
+  exporting?: boolean;
+}) {
+  const [, force] = React.useReducer((n: number) => n + 1, 0);
+  React.useEffect(() => {
+    if (!canvasNode) return;
+    const ro = new ResizeObserver(() => force());
+    ro.observe(canvasNode);
+    return () => ro.disconnect();
+  }, [canvasNode]);
+
+  const supportsScale = formatSupportsScale(state.exportFormat);
+  const dims = canvasNode ? computeOutputSize(canvasNode, state.exportScale) : null;
+  const baseDims = canvasNode ? computeOutputSize(canvasNode, 1) : null;
+  const formatOpts = IMAGE_FORMATS.map((f) => ({ value: f.value, label: f.label }));
+  const scaleOpts = IMAGE_SCALES.map((s) => ({ value: String(s.value), label: s.label }));
+
+  return (
+    <Section title="Export">
+      <Field label="Format">
+        <Select
+          value={state.exportFormat}
+          options={formatOpts}
+          onChange={(v) => onChange({ exportFormat: v as AppState["exportFormat"] })}
+        />
+      </Field>
+
+      {supportsScale && (
+        <Field label="Quality">
+          <Select
+            value={String(state.exportScale)}
+            options={scaleOpts}
+            onChange={(v) => onChange({ exportScale: Number(v) as AppState["exportScale"] })}
+          />
+        </Field>
+      )}
+
+      <div
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 11,
+          color: "var(--text-muted)",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {state.exportFormat === "svg"
+          ? "Vector — resolution-independent"
+          : dims && baseDims
+          ? `${dims.w}×${dims.h} px · ${state.exportScale}× (base ${baseDims.w}×${baseDims.h})`
+          : `${state.exportScale}× pixel ratio`}
+      </div>
+
+      {onExport && (
+        <button
+          type="button"
+          className="pill-btn pill-primary"
+          style={{ marginTop: 4, justifyContent: "center" }}
+          onClick={onExport}
+          disabled={exporting}
+        >
+          {exporting
+            ? "Exporting…"
+            : `Export ${state.exportFormat.toUpperCase()}${supportsScale && state.exportFormat !== "pdf" ? ` · ${state.exportScale}×` : ""}`}
+        </button>
+      )}
+    </Section>
   );
 }
