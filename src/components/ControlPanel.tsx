@@ -1,11 +1,66 @@
 "use client";
 
 import React from "react";
-import { AppState } from "@/lib/types";
+import { AppState, Background } from "@/lib/types";
 import { themes } from "@/lib/themes";
 import { presetBackgrounds } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
 import { Section, Field, Segmented, Switch, Slider, Select, Swatch } from "./ui/Primitives";
+
+type BgKind = "preset" | "solid" | "gradient" | "none";
+
+function parseGradientStops(gradient: string | undefined): { from: string; to: string; angle: number } {
+  const fallback = { from: "#1a1a1a", to: "#3a3a3a", angle: 135 };
+  if (!gradient) return fallback;
+  const angleMatch = gradient.match(/(-?\d+)deg/);
+  const hexes = gradient.match(/#[0-9a-fA-F]{3,8}/g);
+  if (!hexes || hexes.length < 2) return fallback;
+  return {
+    angle: angleMatch ? Number(angleMatch[1]) : 135,
+    from: hexes[0],
+    to: hexes[hexes.length - 1],
+  };
+}
+
+function buildGradient(angle: number, from: string, to: string): string {
+  return `linear-gradient(${angle}deg, ${from}, ${to})`;
+}
+
+function GradientStops({
+  background,
+  onChange,
+}: {
+  background: Background;
+  onChange: (bg: Background) => void;
+}) {
+  const { from, to, angle } = parseGradientStops(background.gradient);
+  const update = (next: { from?: string; to?: string; angle?: number }) => {
+    onChange({
+      type: "gradient",
+      gradient: buildGradient(next.angle ?? angle, next.from ?? from, next.to ?? to),
+    });
+  };
+  return (
+    <>
+      <Field label="From" inline>
+        <Swatch color={from} onChange={(c) => update({ from: c })} ariaLabel="Gradient start" />
+      </Field>
+      <Field label="To" inline>
+        <Swatch color={to} onChange={(c) => update({ to: c })} ariaLabel="Gradient end" />
+      </Field>
+      <Field label="Angle">
+        <Slider
+          value={angle}
+          min={0}
+          max={360}
+          step={5}
+          onChange={(v) => update({ angle: v })}
+          format={(v) => `${v}°`}
+        />
+      </Field>
+    </>
+  );
+}
 
 interface ControlPanelProps {
   state: AppState;
@@ -36,6 +91,17 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
     if (preset) onChange({ background: preset.bg });
   };
 
+  const bgKind: BgKind =
+    state.background.type === "none"
+      ? "none"
+      : currentBgLabel
+      ? "preset"
+      : state.background.type === "solid"
+      ? "solid"
+      : state.background.type === "gradient"
+      ? "gradient"
+      : "preset";
+
   const isChart = state.vizMode !== "table";
 
   return (
@@ -46,22 +112,62 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
         </Field>
 
         <Field label="Background">
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Select
-                value={currentBgLabel}
-                options={bgOpts}
-                onChange={handleBgChange}
-                placeholder="Select background"
-              />
-            </div>
-            <Swatch
-              color={state.background.color || "#000000"}
-              onChange={(color) => onChange({ background: { type: "solid", color } })}
-              ariaLabel="Custom background color"
-            />
-          </div>
+          <Segmented<BgKind>
+            value={bgKind}
+            options={[
+              { value: "preset", label: "Preset" },
+              { value: "solid", label: "Solid" },
+              { value: "gradient", label: "Gradient" },
+              { value: "none", label: "None" },
+            ]}
+            onChange={(kind) => {
+              if (kind === "none") {
+                onChange({ background: { type: "none" } });
+              } else if (kind === "solid") {
+                onChange({ background: { type: "solid", color: state.background.color ?? "#0d0d0d" } });
+              } else if (kind === "gradient") {
+                const s = parseGradientStops(state.background.gradient);
+                onChange({
+                  background: {
+                    type: "gradient",
+                    gradient: `linear-gradient(${s.angle}deg, ${s.from}, ${s.to})`,
+                  },
+                });
+              } else {
+                const first = presetBackgrounds.find((b) => b.bg.type !== "none");
+                if (first) onChange({ background: first.bg });
+              }
+            }}
+          />
         </Field>
+
+        {bgKind === "preset" && (
+          <Field label="Preset">
+            <Select
+              value={currentBgLabel}
+              options={bgOpts}
+              onChange={handleBgChange}
+              placeholder="Select preset"
+            />
+          </Field>
+        )}
+
+        {bgKind === "solid" && (
+          <Field label="Color" inline>
+            <Swatch
+              color={state.background.color ?? "#0d0d0d"}
+              onChange={(color) => onChange({ background: { type: "solid", color } })}
+              ariaLabel="Background color"
+            />
+          </Field>
+        )}
+
+        {bgKind === "gradient" && (
+          <GradientStops
+            background={state.background}
+            onChange={(bg) => onChange({ background: bg })}
+          />
+        )}
 
         <Field label="Font">
           <Select value={state.fontFamily} options={fontOpts} onChange={(v) => onChange({ fontFamily: v })} />
@@ -79,6 +185,87 @@ export default function ControlPanel({ state, onChange }: ControlPanelProps) {
             onChange={(v) => onChange({ fontSize: v })}
           />
         </Field>
+      </Section>
+
+      <Section title="Custom colors">
+        <Field label="Header bg" inline>
+          <Swatch
+            color={state.customHeaderBg || "#000000"}
+            onChange={(v) => onChange({ customHeaderBg: v })}
+            ariaLabel="Header background"
+          />
+        </Field>
+        <Field label="Header text" inline>
+          <Swatch
+            color={state.customHeaderText || "#ffffff"}
+            onChange={(v) => onChange({ customHeaderText: v })}
+            ariaLabel="Header text"
+          />
+        </Field>
+        <Field label="Row bg" inline>
+          <Swatch
+            color={state.customRowBg || "#000000"}
+            onChange={(v) => onChange({ customRowBg: v })}
+            ariaLabel="Row background"
+          />
+        </Field>
+        <Field label="Alt row bg" inline>
+          <Swatch
+            color={state.customAltRowBg || "#0a0a0a"}
+            onChange={(v) => onChange({ customAltRowBg: v })}
+            ariaLabel="Alternate row background"
+          />
+        </Field>
+        <Field label="Row text" inline>
+          <Swatch
+            color={state.customRowText || "#ffffff"}
+            onChange={(v) => onChange({ customRowText: v })}
+            ariaLabel="Row text"
+          />
+        </Field>
+        <Field label="Border" inline>
+          <Swatch
+            color={state.customBorderColor || "#222222"}
+            onChange={(v) => onChange({ customBorderColor: v })}
+            ariaLabel="Border color"
+          />
+        </Field>
+        {(state.customHeaderBg ||
+          state.customHeaderText ||
+          state.customRowBg ||
+          state.customAltRowBg ||
+          state.customRowText ||
+          state.customBorderColor) && (
+          <button
+            type="button"
+            className="seg-btn"
+            style={{
+              alignSelf: "flex-start",
+              padding: "6px 12px",
+              border: "0.5px solid var(--border-strong)",
+              borderRadius: 6,
+              background: "transparent",
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+            onClick={() =>
+              onChange({
+                customHeaderBg: "",
+                customHeaderText: "",
+                customRowBg: "",
+                customAltRowBg: "",
+                customRowText: "",
+                customBorderColor: "",
+              })
+            }
+          >
+            Reset
+          </button>
+        )}
       </Section>
 
       <Section title="Layout">
