@@ -8,7 +8,7 @@ import { getTheme } from "@/lib/themes";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import InputDrawer from "@/components/InputDrawer";
-import { Sun, Moon, X } from "lucide-react";
+import { Sun, Moon, X, Github } from "lucide-react";
 
 const STORAGE_KEY = "pastepretty-state";
 
@@ -288,6 +288,16 @@ export default function Home() {
         <div className="app-header-center">{tabs}</div>
 
         <div className="app-header-right">
+          <a
+            className="icon-btn"
+            href="https://github.com/goodylili/pastepretty"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Star goodylili/pastepretty on GitHub"
+            title="Open source — star us on GitHub"
+          >
+            <Github size={14} strokeWidth={2} />
+          </a>
           <button
             className="icon-btn"
             onClick={toggleColorMode}

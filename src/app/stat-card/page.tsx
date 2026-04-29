@@ -14,7 +14,7 @@ import { transformThemeForLightMode, transformBackgroundForLightMode } from "@/l
 import WindowFrame from "@/components/WindowFrame";
 import {
   Download, Upload, ChevronDown, Image, FileJson, FileSpreadsheet, FileText,
-  Database, Sun, Moon, X,
+  Database, Sun, Moon, Github, X,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -1025,6 +1025,19 @@ export default function StatCardPage() {
 
           {/* Actions */}
           <div className="header-actions flex items-center gap-2">
+            <a
+              href="https://github.com/goodylili/pastepretty"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+              style={{ background: "var(--surface)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--surface)")}
+              title="Open source — star us on GitHub"
+              aria-label="Star goodylili/pastepretty on GitHub"
+            >
+              <Github size={14} />
+            </a>
             <button
               onClick={toggleColorMode}
               className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
