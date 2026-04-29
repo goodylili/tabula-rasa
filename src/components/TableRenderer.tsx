@@ -4,16 +4,27 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { TableData, TableTheme } from "@/lib/types";
 import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
 
-// Render inline `code` spans within cell text
+// Render inline markdown within cell text: `code`, **bold**, *italic*, _italic_, ~~strike~~, [text](url)
 function renderCellContent(text: string): React.ReactNode {
-  if (!text.includes("`")) return text;
-  const parts = text.split(/(`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
-      const code = part.slice(1, -1);
-      return (
+  if (!text) return text;
+  // Fast path: no markdown characters at all
+  if (!/[`*_~\[]/.test(text)) return text;
+
+  const pattern = /(`[^`]+`)|(\*\*[^*\n]+\*\*)|(__[^_\n]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)|(~~[^~\n]+~~)|(\[[^\]\n]+\]\([^)\n]+\))/g;
+  const out: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      out.push(text.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith("`")) {
+      out.push(
         <code
-          key={i}
+          key={key++}
           style={{
             background: "var(--code-bg)",
             padding: "1px 5px",
@@ -22,12 +33,39 @@ function renderCellContent(text: string): React.ReactNode {
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           }}
         >
-          {code}
+          {token.slice(1, -1)}
         </code>
       );
+    } else if (token.startsWith("**") || token.startsWith("__")) {
+      out.push(<strong key={key++}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("~~")) {
+      out.push(<s key={key++}>{token.slice(2, -2)}</s>);
+    } else if (token.startsWith("[")) {
+      const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
+      if (linkMatch) {
+        out.push(
+          <a
+            key={key++}
+            href={linkMatch[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit", textDecoration: "underline" }}
+          >
+            {linkMatch[1]}
+          </a>
+        );
+      } else {
+        out.push(token);
+      }
+    } else if (token.startsWith("*") || token.startsWith("_")) {
+      out.push(<em key={key++}>{token.slice(1, -1)}</em>);
+    } else {
+      out.push(token);
     }
-    return part;
-  });
+    lastIndex = match.index + token.length;
+  }
+  if (lastIndex < text.length) out.push(text.slice(lastIndex));
+  return out;
 }
 
 function EditableCell({
@@ -91,6 +129,7 @@ interface TableRendererProps {
   theme: TableTheme;
   fontSize: number;
   showGrid: boolean;
+  showColumnLines?: boolean;
   stripedRows: boolean;
   highlightFirstRow?: boolean;
   highlightFirstCol?: boolean;
@@ -109,6 +148,7 @@ export default function TableRenderer({
   theme,
   fontSize,
   showGrid,
+  showColumnLines = false,
   stripedRows,
   highlightFirstRow = false,
   highlightFirstCol = false,
@@ -174,6 +214,7 @@ export default function TableRenderer({
 
   // Reset column widths when data changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when data shape changes
     setColWidths({});
   }, [data.headers.length]);
 
@@ -238,7 +279,7 @@ export default function TableRenderer({
       padding: "11px 18px",
       borderBottom: showGrid ? `1px solid ${theme.borderColor}` : "none",
       borderRight:
-        showGrid && ci < data.headers.length - 1
+        showColumnLines && ci < data.headers.length - 1
           ? `1px solid ${theme.borderColor}`
           : "none",
       whiteSpace: "nowrap" as const,
@@ -402,7 +443,7 @@ export default function TableRenderer({
             {interactive && showFilters && (
               <tr>
                 {showRowNumbers && (
-                  <th style={{ background: theme.rowBg, padding: "6px 12px", borderBottom: `1px solid ${theme.borderColor}`, borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none" }} />
+                  <th style={{ background: theme.rowBg, padding: "6px 12px", borderBottom: `1px solid ${theme.borderColor}`, borderRight: showColumnLines ? `1px solid ${theme.borderColor}` : "none" }} />
                 )}
                 {data.headers.map((_, i) => (
                   <th
@@ -414,7 +455,7 @@ export default function TableRenderer({
                       padding: "6px 12px",
                       borderBottom: `1px solid ${theme.borderColor}`,
                       borderRight:
-                        showGrid && i < data.headers.length - 1
+                        showColumnLines && i < data.headers.length - 1
                           ? `1px solid ${theme.borderColor}`
                           : "none",
                     }}
@@ -454,7 +495,7 @@ export default function TableRenderer({
                     fontWeight: 600,
                     fontSize: `${fontSize - 2}px`,
                     borderBottom: showGrid ? `2px solid ${theme.borderColor}` : "none",
-                    borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none",
+                    borderRight: showColumnLines ? `1px solid ${theme.borderColor}` : "none",
                     whiteSpace: "nowrap",
                     opacity: 0.6,
                   }}
@@ -480,7 +521,7 @@ export default function TableRenderer({
                       ? `2px solid ${theme.borderColor}`
                       : "none",
                     borderRight:
-                      showGrid && i < data.headers.length - 1
+                      showColumnLines && i < data.headers.length - 1
                         ? `1px solid ${theme.borderColor}`
                         : "none",
                     whiteSpace: "nowrap",
@@ -490,7 +531,7 @@ export default function TableRenderer({
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    {header}
+                    {renderCellContent(header)}
                     {interactive && (
                       <span style={{ opacity: sortCol === i ? 1 : 0.3, display: "inline-flex" }}>
                         {sortCol === i && sortDir === "asc" ? (
@@ -539,7 +580,7 @@ export default function TableRenderer({
                         fontSize: `${fontSize - 2}px`,
                         opacity: 0.4,
                         fontWeight: 500,
-                        borderRight: showGrid ? `1px solid ${theme.borderColor}` : "none",
+                        borderRight: showColumnLines ? `1px solid ${theme.borderColor}` : "none",
                       }}
                     >
                       {ri + 1}

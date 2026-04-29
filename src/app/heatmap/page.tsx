@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, Background } from "@/lib/types";
 import { detectAndParse } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds, backgroundToCss } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
@@ -262,25 +263,28 @@ function Dropdown({
     groups[groups.length - 1].items.push(opt);
   }
 
-  const getMenuStyle = (): React.CSSProperties => {
-    if (!triggerRef.current) return {};
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const menuMaxH = 340;
     if (spaceAbove > spaceBelow) {
-      return {
+      setMenuStyle({
         position: "fixed", bottom: window.innerHeight - rect.top + 6,
         left: rect.left, maxHeight: Math.min(menuMaxH, spaceAbove - 16),
         zIndex: 9999,
-      };
+      });
+    } else {
+      setMenuStyle({
+        position: "fixed", top: rect.bottom + 6,
+        left: rect.left, maxHeight: Math.min(menuMaxH, spaceBelow - 16),
+        zIndex: 9999,
+      });
     }
-    return {
-      position: "fixed", top: rect.bottom + 6,
-      left: rect.left, maxHeight: Math.min(menuMaxH, spaceBelow - 16),
-      zIndex: 9999,
-    };
-  };
+  }, [open]);
 
   return (
     <>
@@ -307,7 +311,7 @@ function Dropdown({
           <div
             className="rounded-xl overflow-auto"
             style={{
-              ...getMenuStyle(),
+              ...menuStyle,
               background: "var(--elevated-bg)", border: "1px solid var(--border)",
               minWidth: "160px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
             }}
@@ -734,12 +738,12 @@ export default function HeatmapPage() {
       else if (imgFormat === "svg") dataUrl = await toSvg(canvasRef.current, opts);
       else dataUrl = await toPng(canvasRef.current, opts);
       const link = document.createElement("a");
-      link.download = `pastepretty-heatmap-${state.themeId}.${imgFormat}`;
+      link.download = `${sanitizeFilename(state.title, "pastepretty-heatmap")}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) { console.error("Export failed:", err); }
     finally { setExporting(false); }
-  }, [state.themeId]);
+  }, [state.title]);
 
   const handleExport = useCallback(async (format: ExportFormat) => {
     setExportOpen(false);
@@ -750,7 +754,7 @@ export default function HeatmapPage() {
     if (!state.tableData) return;
     const content = exportData(state.tableData, format, state.title || "heatmap");
     const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-    downloadText(content, `pastepretty-heatmap.${ext}`);
+    downloadText(content, `${sanitizeFilename(state.title, "pastepretty-heatmap")}.${ext}`);
   }, [handleExportImage, state.tableData, state.title]);
 
   const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -815,12 +819,12 @@ export default function HeatmapPage() {
   ];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* ── Header ── */}
       <header className="shrink-0" style={{ background: "var(--panel-bg)", borderBottom: "1px solid var(--panel-border)" }}>
         <div className="flex items-center justify-between px-3 sm:px-5" style={{ height: "52px" }}>
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
+            <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(110,86,207,0.3)" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -840,7 +844,7 @@ export default function HeatmapPage() {
                   heatmap
                 </span>
               </div>
-            </a>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2 header-actions">
@@ -933,7 +937,7 @@ export default function HeatmapPage() {
             </div>
           </div>
         ) : (
-          <div ref={containerRef} className="flex-1 flex items-start justify-center overflow-auto p-4 sm:p-8">
+          <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-auto p-4 sm:p-8">
             <div style={{
               transform: exporting ? undefined : `scale(${scale})`,
               transformOrigin: "top center",
@@ -1010,7 +1014,7 @@ export default function HeatmapPage() {
               onChange={(id) => handleChange({ fontFamily: id })} />
           </ControlGroup>
 
-          <SliderControl label="Size" value={state.fontSize} min={10} max={20}
+          <SliderControl label="Font Size" value={state.fontSize} min={10} max={20}
             onChange={(v) => handleChange({ fontSize: v })} />
 
           <ControlGroup label="Title">
@@ -1043,7 +1047,7 @@ export default function HeatmapPage() {
               onChange={(id) => handleChange({ windowStyle: id as HeatmapState["windowStyle"] })} />
           </ControlGroup>
 
-          <SliderControl label="Padding" value={state.padding} min={0} max={128} step={8}
+          <SliderControl label="Size" value={state.padding} min={0} max={128} step={8}
             onChange={(v) => handleChange({ padding: v })} />
 
           <SliderControl label="Radius" value={state.borderRadius} min={0} max={48}

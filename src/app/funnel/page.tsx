@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, TableTheme, Background } from "@/lib/types";
 import { detectAndParse } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds, backgroundToCss } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
@@ -655,6 +656,14 @@ function ColorCustomizerPopover({
   onChange: (patch: Partial<FunnelState>) => void;
   anchorRef: React.RefObject<HTMLButtonElement | null>;
 }) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (open && anchorRef.current) {
+      setRect(anchorRef.current.getBoundingClientRect());
+    }
+  }, [open, anchorRef]);
+
   if (!open) return null;
 
   const fields: { key: keyof FunnelState; label: string; themeDefault: string }[] = [
@@ -664,8 +673,6 @@ function ColorCustomizerPopover({
     { key: "customRowText", label: "Text", themeDefault: theme.rowText },
     { key: "customBorderColor", label: "Border", themeDefault: theme.borderColor },
   ];
-
-  const rect = anchorRef.current?.getBoundingClientRect();
 
   return createPortal(
     <>
@@ -849,7 +856,7 @@ export default function FunnelPage() {
         dataUrl = await toPng(canvasRef.current, opts);
       }
       const link = document.createElement("a");
-      link.download = `pastepretty-funnel-${state.themeId}.${imgFormat}`;
+      link.download = `${sanitizeFilename(state.title, "pastepretty-funnel")}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -857,7 +864,7 @@ export default function FunnelPage() {
     } finally {
       setExporting(false);
     }
-  }, [state.themeId]);
+  }, [state.title]);
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
@@ -869,7 +876,7 @@ export default function FunnelPage() {
       if (!state.tableData) return;
       const content = exportData(state.tableData, format, state.title || "funnel_chart");
       const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `pastepretty-funnel.${ext}`);
+      downloadText(content, `${sanitizeFilename(state.title, "pastepretty-funnel")}.${ext}`);
     },
     [handleExportImage, state.tableData, state.title]
   );
@@ -937,7 +944,7 @@ export default function FunnelPage() {
   // RENDER
   // =========================================================================
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* -- Header -------------------------------------------------------- */}
       <header
         className="shrink-0"
@@ -946,7 +953,7 @@ export default function FunnelPage() {
         <div className="flex items-center justify-between px-3 sm:px-5" style={{ height: "52px" }}>
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(110,86,207,0.3)" }}
@@ -958,7 +965,7 @@ export default function FunnelPage() {
                 <rect x="9" y="7" width="6" height="4" rx="1" fill="white" opacity="0.4" />
                 <rect x="1" y="12" width="14" height="3" rx="1" fill="white" opacity="0.3" />
               </svg>
-            </a>
+            </Link>
             <div className="flex items-baseline gap-2">
               <span className="nav-brand-text font-bold text-sm tracking-tight" style={{ color: "var(--foreground)" }}>
                 PastePretty
@@ -1261,7 +1268,7 @@ export default function FunnelPage() {
           {/* Font size */}
           <label className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: "var(--text-muted)" }}>
-              Size
+              Font Size
             </span>
             <select
               value={state.fontSize}
@@ -1375,10 +1382,10 @@ export default function FunnelPage() {
             </select>
           </label>
 
-          {/* Padding */}
+          {/* Size */}
           <label className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: "var(--text-muted)" }}>
-              Padding
+              Size
             </span>
             <select
               value={state.padding}

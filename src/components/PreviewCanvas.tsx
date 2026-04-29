@@ -40,19 +40,21 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     }
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(1);
+    const [scaleInfo, setScaleInfo] = useState({ scale: 1, contentScrollHeight: 0 });
+    const scale = scaleInfo.scale;
+    const contentScrollHeight = scaleInfo.contentScrollHeight;
 
     const updateScale = useCallback(() => {
       if (exporting || !containerRef.current || !contentRef.current) {
-        setScale(1);
+        setScaleInfo({ scale: 1, contentScrollHeight: 0 });
         return;
       }
       const container = containerRef.current;
       const content = contentRef.current;
 
-      // Available space (minus padding)
-      const padX = window.innerWidth < 640 ? 32 : 64; // p-4 or p-8
-      const padY = padX;
+      // Available space (canvas-stage padding: 50/40/100 desktop, 36/16/130 mobile)
+      const padX = window.innerWidth < 768 ? 32 : 80;
+      const padY = window.innerWidth < 768 ? 166 : 150;
       const availW = container.clientWidth - padX;
       const availH = container.clientHeight - padY;
 
@@ -62,17 +64,18 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
       const contentW = content.scrollWidth;
       const contentH = content.scrollHeight;
 
-      if (contentW <= 0 || contentH <= 0) { setScale(1); return; }
+      if (contentW <= 0 || contentH <= 0) { setScaleInfo({ scale: 1, contentScrollHeight: contentH }); return; }
 
       const scaleX = availW / contentW;
       const scaleY = availH / contentH;
       const newScale = Math.min(1, scaleX, scaleY);
 
       // Don't scale below 0.3 — at that point just scroll
-      setScale(Math.max(0.3, newScale));
+      setScaleInfo({ scale: Math.max(0.3, newScale), contentScrollHeight: contentH });
     }, [exporting]);
 
     useEffect(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional layout measurement that must set state
       updateScale();
     }, [
       state.tableData, state.padding, state.fontSize, state.windowStyle,
@@ -90,11 +93,13 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
 
     if (!state.tableData) {
       return (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-5xl mb-4" style={{ opacity: 0.3 }}>T</div>
-            <p className="text-sm" style={{ color: "var(--text-subtle)" }}>
-              Paste JSON, CSV, Markdown, or PostgreSQL to preview
+        <div className="canvas-stage">
+          <div style={{ textAlign: "center", color: "var(--text-dim)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+              No data
+            </div>
+            <p style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
+              Paste JSON, CSV, Markdown, or PostgreSQL
             </p>
           </div>
         </div>
@@ -106,15 +111,15 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
     return (
       <div
         ref={containerRef}
-        className="flex-1 flex items-start justify-center overflow-auto p-4 sm:p-8"
+        className="canvas-stage"
       >
         <div
           style={{
             transform: exporting ? undefined : `scale(${scale})`,
             transformOrigin: "top center",
             // Reserve the scaled height so the container doesn't collapse
-            ...(scale < 1 && !exporting && contentRef.current ? {
-              marginBottom: `${-(contentRef.current.scrollHeight * (1 - scale))}px`,
+            ...(scale < 1 && !exporting && contentScrollHeight > 0 ? {
+              marginBottom: `${-(contentScrollHeight * (1 - scale))}px`,
             } : {}),
           }}
         >
@@ -148,6 +153,7 @@ const PreviewCanvas = forwardRef<HTMLDivElement, PreviewCanvasProps>(
                   theme={theme}
                   fontSize={state.fontSize}
                   showGrid={state.showGrid}
+                  showColumnLines={state.showColumnLines}
                   stripedRows={state.stripedRows}
                   highlightFirstRow={state.highlightFirstRow}
                   highlightFirstCol={state.highlightFirstCol}

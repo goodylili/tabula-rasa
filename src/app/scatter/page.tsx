@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { toPng, toJpeg, toSvg } from "html-to-image";
 import { TableData, TableTheme, Background } from "@/lib/types";
 import { detectAndParse } from "@/lib/parser";
-import { exportData, downloadText, ExportFormat } from "@/lib/exporters";
+import { exportData, downloadText, ExportFormat, sanitizeFilename } from "@/lib/exporters";
 import { themes, getTheme } from "@/lib/themes";
 import { presetBackgrounds, backgroundToCss } from "@/lib/backgrounds";
 import { FONT_OPTIONS } from "@/lib/fonts";
@@ -795,7 +796,7 @@ export default function ScatterPage() {
         dataUrl = await toPng(canvasRef.current, opts);
       }
       const link = document.createElement("a");
-      link.download = `scatter-${state.themeId}.${imgFormat}`;
+      link.download = `${sanitizeFilename(state.title, "scatter")}.${imgFormat}`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -803,7 +804,7 @@ export default function ScatterPage() {
     } finally {
       setExporting(false);
     }
-  }, [state.themeId]);
+  }, [state.title]);
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
@@ -815,7 +816,7 @@ export default function ScatterPage() {
       if (!state.tableData) return;
       const content = exportData(state.tableData, format, state.title || "scatter_data");
       const ext = EXPORT_FORMATS.find((f) => f.id === format)?.ext ?? "txt";
-      downloadText(content, `scatter-data.${ext}`);
+      downloadText(content, `${sanitizeFilename(state.title, "scatter-data")}.${ext}`);
     },
     [handleExportImage, state.tableData, state.title],
   );
@@ -916,7 +917,7 @@ export default function ScatterPage() {
   }, {});
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
       {/* Header */}
       <header
         className="shrink-0"
@@ -924,7 +925,7 @@ export default function ScatterPage() {
       >
         <div className="flex items-center justify-between px-3 sm:px-5" style={{ height: "52px" }}>
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(110,86,207,0.3)" }}
@@ -936,7 +937,7 @@ export default function ScatterPage() {
                 <circle cx="13" cy="12" r="1.5" fill="white" opacity="0.5" />
                 <circle cx="3" cy="13" r="1" fill="white" opacity="0.4" />
               </svg>
-            </a>
+            </Link>
             <div className="flex items-baseline gap-2">
               <span className="nav-brand-text font-bold text-sm tracking-tight" style={{ color: "var(--foreground)" }}>
                 PastePretty
@@ -1292,7 +1293,7 @@ export default function ScatterPage() {
 
           {/* Font Size */}
           <div className="flex flex-col shrink-0">
-            <div style={labelStyle}>Size</div>
+            <div style={labelStyle}>Font Size</div>
             <select
               value={state.fontSize}
               onChange={(e) => handleChange({ fontSize: Number(e.target.value) })}
@@ -1402,9 +1403,9 @@ export default function ScatterPage() {
             </div>
           </div>
 
-          {/* Padding */}
+          {/* Size */}
           <div className="flex flex-col shrink-0">
-            <div style={labelStyle}>Padding</div>
+            <div style={labelStyle}>Size</div>
             <select
               value={state.padding}
               onChange={(e) => handleChange({ padding: Number(e.target.value) })}
